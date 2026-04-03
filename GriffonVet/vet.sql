@@ -50,18 +50,18 @@ GO
 -- Guarda clientes y administradores del sistema
 -- =========================================================
 CREATE TABLE dbo.usuarios (
-    id_usuario INT IDENTITY(1,1) PRIMARY KEY,-- Identificador unico del usuario
-    nombre NVARCHAR(100) NOT NULL,-- Nombre del usuario
-    apellido NVARCHAR(100) NOT NULL,-- Apellido del usuario
-    email NVARCHAR(150) NOT NULL UNIQUE,-- Correo electronico, se usa para login y contacto
-    telefono NVARCHAR(30) NULL,-- Telefono del usuario
-    password_hash NVARCHAR(255) NOT NULL,-- Contrase�a en formato hash, nunca guardar contrase�a plana
-    rol NVARCHAR(20) NOT NULL,-- Rol del usuario: CLIENTE o ADMIN
-    activo BIT NOT NULL DEFAULT 1,-- Indica si el usuario esta habilitado en el sistema
-    fecha_alta DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha de alta del usuario
+                              id_usuario INT IDENTITY(1,1) PRIMARY KEY,-- Identificador unico del usuario
+                              nombre NVARCHAR(100) NOT NULL,-- Nombre del usuario
+                              apellido NVARCHAR(100) NOT NULL,-- Apellido del usuario
+                              email NVARCHAR(150) NOT NULL UNIQUE,-- Correo electronico, se usa para login y contacto
+                              telefono NVARCHAR(30) NULL,-- Telefono del usuario
+                              password_hash NVARCHAR(255) NOT NULL,-- Contraseña en formato hash, nunca guardar contraseña plana
+                              rol NVARCHAR(20) NOT NULL,-- Rol del usuario: CLIENTE o ADMIN
+                              activo BIT NOT NULL DEFAULT 1,-- Indica si el usuario esta habilitado en el sistema
+                              fecha_alta DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha de alta del usuario
 
-    CONSTRAINT CK_usuarios_rol
-        CHECK (rol IN ('CLIENTE', 'ADMIN'))
+                              CONSTRAINT CK_usuarios_rol
+                                  CHECK (rol IN ('CLIENTE', 'ADMIN'))
 );
 GO
 
@@ -70,28 +70,27 @@ GO
 -- Guarda las mascotas registradas por cada cliente
 -- =========================================================
 CREATE TABLE dbo.mascotas (
-    id_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador unico de la mascota
-    id_usuario INT NOT NULL, -- Due�o de la mascota (cliente)
-    nombre NVARCHAR(100) NOT NULL,-- Nombre de la mascota
-    especie NVARCHAR(50) NOT NULL,-- Ejemplo: Perro, Gato
-    raza NVARCHAR(100) NULL,-- Raza de la mascota
-    tamanio NVARCHAR(20) NULL,-- Tama�o: Chico, Mediano, Grande
-    edad INT NULL,-- Edad de la mascota
-    peso DECIMAL(10,2) NULL,-- Peso actual aproximado
-    sexo NVARCHAR(20) NULL,-- Macho / Hembra
-    tipo_pelaje NVARCHAR(100) NULL,-- Largo, corto, rizado, etc.
-    alergias_general NVARCHAR(500) NULL,-- Campo resumen rapido de alergias
-    comportamiento NVARCHAR(300) NULL,-- Ejemplo: nervioso, docil, agresivo, etc.
-    observaciones NVARCHAR(1000) NULL,-- Observaciones generales cargadas por el cliente o admin
-    activo BIT NOT NULL DEFAULT 1,-- Baja logica de la mascota
-    fecha_registro DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha en la que se registro la mascota
+                              id_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador unico de la mascota
+                              id_usuario INT NOT NULL, -- Dueño de la mascota (cliente)
+                              nombre NVARCHAR(100) NOT NULL,-- Nombre de la mascota
+                              especie NVARCHAR(50) NOT NULL,-- Ejemplo: Perro, Gato
+                              raza NVARCHAR(100) NULL,-- Raza de la mascota
+                              tamanio NVARCHAR(20) NULL,-- Tamaño: Chico, Mediano, Grande
+                              fecha_nacimiento DATE NULL,
+                              sexo NVARCHAR(20) NULL,-- Macho / Hembra
+                              tipo_pelaje NVARCHAR(100) NULL,-- Largo, corto, rizado, etc.
+                              alergias_general NVARCHAR(500) NULL,-- Campo resumen rapido de alergias
+                              comportamiento NVARCHAR(300) NULL,-- Ejemplo: nervioso, docil, agresivo, etc.
+                              observaciones NVARCHAR(1000) NULL,-- Observaciones generales cargadas por el cliente o admin
+                              activo BIT NOT NULL DEFAULT 1,-- Baja logica de la mascota
+                              fecha_registro DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha en la que se registro la mascota
 
-    CONSTRAINT FK_mascotas_usuarios
-        FOREIGN KEY (id_usuario) REFERENCES dbo.usuarios(id_usuario),
-    CONSTRAINT CK_mascotas_tamanio
-        CHECK (tamanio IN ('CHICO', 'MEDIANO', 'GRANDE') OR tamanio IS NULL),
-    CONSTRAINT CK_mascotas_sexo
-        CHECK (sexo IN ('MACHO', 'HEMBRA') OR sexo IS NULL)
+                              CONSTRAINT FK_mascotas_usuarios
+                                  FOREIGN KEY (id_usuario) REFERENCES dbo.usuarios(id_usuario),
+                              CONSTRAINT CK_mascotas_tamanio
+                                  CHECK (tamanio IN ('CHICO', 'MEDIANO', 'GRANDE') OR tamanio IS NULL),
+                              CONSTRAINT CK_mascotas_sexo
+                                  CHECK (sexo IN ('MACHO', 'HEMBRA') OR sexo IS NULL)
 );
 GO
 
@@ -100,12 +99,12 @@ GO
 -- Define los servicios disponibles de peluqueria/veterinaria
 -- =========================================================
 CREATE TABLE dbo.servicios (
-    id_servicio INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del servicio
-    nombre NVARCHAR(100) NOT NULL,-- Nombre del servicio: ba�o, corte, etc.
-    descripcion NVARCHAR(500) NULL,-- Descripcion del servicio
-    duracion_minutos INT NOT NULL,-- Duracion estimada del servicio
-    precio_base DECIMAL(12,2) NOT NULL,-- Precio base del servicio
-    activo BIT NOT NULL DEFAULT 1-- Indica si el servicio esta disponible
+                               id_servicio INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del servicio
+                               nombre NVARCHAR(100) NOT NULL,-- Nombre del servicio: baño, corte, etc.
+                               descripcion NVARCHAR(500) NULL,-- Descripcion del servicio
+                               duracion_minutos INT NOT NULL,-- Duracion estimada del servicio
+                               precio_base DECIMAL(12,2) NOT NULL,-- Precio base del servicio
+                               activo BIT NOT NULL DEFAULT 1-- Indica si el servicio esta disponible
 );
 GO
 
@@ -115,15 +114,15 @@ GO
 -- No incluye carrito, solo exhibicion y gestion
 -- =========================================================
 CREATE TABLE dbo.productos (
-    id_producto INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del producto
-    nombre NVARCHAR(150) NOT NULL,-- Nombre comercial del producto
-    descripcion NVARCHAR(1000) NULL,-- Descripcion del producto
-    precio DECIMAL(12,2) NOT NULL, -- Precio del producto
-    categoria NVARCHAR(100) NOT NULL,-- Categoria: alimento, shampoo, juguete, etc.
-    imagen_url NVARCHAR(500) NULL, -- URL o ruta de imagen del producto
-    stock INT NULL,-- Stock opcional, por si queres mostrar disponibilidad
-    activo BIT NOT NULL DEFAULT 1,-- Indica si el producto esta visible
-    fecha_alta DATETIME NOT NULL DEFAULT GETDATE()-- Fecha de alta del producto
+                               id_producto INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del producto
+                               nombre NVARCHAR(150) NOT NULL,-- Nombre comercial del producto
+                               descripcion NVARCHAR(1000) NULL,-- Descripcion del producto
+                               precio DECIMAL(12,2) NOT NULL, -- Precio del producto
+                               categoria NVARCHAR(100) NOT NULL,-- Categoria: alimento, shampoo, juguete, etc.
+                               imagen_url NVARCHAR(500) NULL, -- URL o ruta de imagen del producto
+                               stock INT NULL,-- Stock opcional, por si queres mostrar disponibilidad
+                               activo BIT NOT NULL DEFAULT 1,-- Indica si el producto esta visible
+                               fecha_alta DATETIME NOT NULL DEFAULT GETDATE()-- Fecha de alta del producto
 );
 GO
 
@@ -132,17 +131,17 @@ GO
 -- Define los horarios regulares del negocio por dia de semana
 -- =========================================================
 CREATE TABLE dbo.horarios_atencion (
-    id_horario INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro de horario
-    dia_semana INT NOT NULL,-- Dia de la semana: 1=Lunes ... 7=Domingo
-    hora_apertura TIME NOT NULL,-- Hora de inicio de atencion
-    hora_cierre TIME NOT NULL,-- Hora de finalizacion de atencion
-    duracion_turno_minutos INT NOT NULL,-- Duracion base de cada turno
-    activo BIT NOT NULL DEFAULT 1,-- Permite habilitar/deshabilitar un horario
+                                       id_horario INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro de horario
+                                       dia_semana INT NOT NULL,-- Dia de la semana: 1=Lunes ... 7=Domingo
+                                       hora_apertura TIME NOT NULL,-- Hora de inicio de atencion
+                                       hora_cierre TIME NOT NULL,-- Hora de finalizacion de atencion
+                                       duracion_turno_minutos INT NOT NULL,-- Duracion base de cada turno
+                                       activo BIT NOT NULL DEFAULT 1,-- Permite habilitar/deshabilitar un horario
 
-    CONSTRAINT CK_horarios_atencion_dia_semana
-        CHECK (dia_semana BETWEEN 1 AND 7),
-    CONSTRAINT CK_horarios_atencion_horas
-        CHECK (hora_apertura < hora_cierre)
+                                       CONSTRAINT CK_horarios_atencion_dia_semana
+                                           CHECK (dia_semana BETWEEN 1 AND 7),
+                                       CONSTRAINT CK_horarios_atencion_horas
+                                           CHECK (hora_apertura < hora_cierre)
 );
 GO
 
@@ -152,19 +151,19 @@ GO
 -- Ej: feriados, cierre por mantenimiento, etc.
 -- =========================================================
 CREATE TABLE dbo.agenda_bloqueos (
-    id_bloqueo INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del bloqueo
-    fecha DATE NOT NULL,-- Fecha del bloqueo
-    hora_desde TIME NULL,-- Hora de inicio del bloqueo; NULL puede significar todo el dia
-    hora_hasta TIME NULL, -- Hora de fin del bloqueo
-    motivo NVARCHAR(300) NULL, -- Motivo del bloqueo
-    activo BIT NOT NULL DEFAULT 1, -- Si el bloqueo esta vigente
+                                     id_bloqueo INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del bloqueo
+                                     fecha DATE NOT NULL,-- Fecha del bloqueo
+                                     hora_desde TIME NULL,-- Hora de inicio del bloqueo; NULL puede significar todo el dia
+                                     hora_hasta TIME NULL, -- Hora de fin del bloqueo
+                                     motivo NVARCHAR(300) NULL, -- Motivo del bloqueo
+                                     activo BIT NOT NULL DEFAULT 1, -- Si el bloqueo esta vigente
 
-    CONSTRAINT CK_agenda_bloqueos_horas
-        CHECK (
-            (hora_desde IS NULL AND hora_hasta IS NULL)
-            OR
-            (hora_desde IS NOT NULL AND hora_hasta IS NOT NULL AND hora_desde < hora_hasta)
-        )
+                                     CONSTRAINT CK_agenda_bloqueos_horas
+                                         CHECK (
+                                             (hora_desde IS NULL AND hora_hasta IS NULL)
+                                                 OR
+                                             (hora_desde IS NOT NULL AND hora_hasta IS NOT NULL AND hora_desde < hora_hasta)
+                                             )
 );
 GO
 
@@ -173,25 +172,21 @@ GO
 -- Guarda los turnos reservados por los clientes
 -- =========================================================
 CREATE TABLE dbo.reservas (
-    id_reserva INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de la reserva
-    id_usuario INT NOT NULL,-- Cliente que realiza la reserva
-    id_mascota INT NOT NULL,-- Mascota para la cual se reserva el turno
-    id_servicio INT NOT NULL,-- Servicio solicitado
-    fecha DATE NOT NULL,-- Fecha del turno
-    hora TIME NOT NULL, -- Hora del turno
-    estado NVARCHAR(20) NOT NULL DEFAULT 'PENDIENTE', -- Estado de la reserva: PENDIENTE, CONFIRMADA, CANCELADA, ATENDIDA
-    observaciones NVARCHAR(1000) NULL, -- Comentarios extra de la reserva
-    google_calendar_event_id NVARCHAR(255) NULL,-- Id del evento creado en Google Calendar
-    fecha_creacion DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha de creacion de la reserva
+                              id_reserva INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de la reserva
+                              id_usuario INT NOT NULL,-- Cliente que realiza la reserva
+                              id_servicio INT NOT NULL,-- Servicio solicitado
+                              fecha DATE NOT NULL,-- Fecha del turno
+                              hora TIME NOT NULL, -- Hora del turno
+                              estado NVARCHAR(20) NOT NULL DEFAULT 'PENDIENTE', -- Estado de la reserva: PENDIENTE, CONFIRMADA, CANCELADA, ATENDIDA
+                              observaciones NVARCHAR(1000) NULL, -- Comentarios extra de la reserva
+                              fecha_creacion DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha de creacion de la reserva
 
-    CONSTRAINT FK_reservas_usuarios
-        FOREIGN KEY (id_usuario) REFERENCES dbo.usuarios(id_usuario),
-    CONSTRAINT FK_reservas_mascotas
-        FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
-    CONSTRAINT FK_reservas_servicios
-        FOREIGN KEY (id_servicio) REFERENCES dbo.servicios(id_servicio),
-    CONSTRAINT CK_reservas_estado
-        CHECK (estado IN ('PENDIENTE', 'CONFIRMADA', 'CANCELADA', 'ATENDIDA'))
+                              CONSTRAINT FK_reservas_usuarios
+                                  FOREIGN KEY (id_usuario) REFERENCES dbo.usuarios(id_usuario),
+                              CONSTRAINT FK_reservas_servicios
+                                  FOREIGN KEY (id_servicio) REFERENCES dbo.servicios(id_servicio),
+                              CONSTRAINT CK_reservas_estado
+                                  CHECK (estado IN ('PENDIENTE', 'CONFIRMADA', 'CANCELADA', 'ATENDIDA'))
 );
 GO
 
@@ -201,14 +196,14 @@ GO
 -- Una mascota tiene una historia clinica principal
 -- =========================================================
 CREATE TABLE dbo.historias_clinicas (
-    id_historia_clinica INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de la historia clinica
-    id_mascota INT NOT NULL UNIQUE,-- Relacion 1 a 1 con la mascota
-    fecha_apertura DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha de apertura de la historia clinica
-    observaciones_generales NVARCHAR(2000) NULL,-- Observaciones generales permanentes del paciente
-    activo BIT NOT NULL DEFAULT 1,-- Indica si la historia clinica esta activa
+                                        id_historia_clinica INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de la historia clinica
+                                        id_mascota INT NOT NULL UNIQUE,-- Relacion 1 a 1 con la mascota
+                                        fecha_apertura DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha de apertura de la historia clinica
+                                        observaciones_generales NVARCHAR(2000) NULL,-- Observaciones generales permanentes del paciente
+                                        activo BIT NOT NULL DEFAULT 1,-- Indica si la historia clinica esta activa
 
-    CONSTRAINT FK_historias_clinicas_mascotas
-        FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota)
+                                        CONSTRAINT FK_historias_clinicas_mascotas
+                                            FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota)
 );
 GO
 
@@ -218,21 +213,19 @@ GO
 -- registrada por un administrador para una mascota
 -- =========================================================
 CREATE TABLE dbo.consultas_clinicas (
-    id_consulta INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de la consulta clinica
-    id_historia_clinica INT NOT NULL,-- Historia clinica a la que pertenece la consulta
-    fecha DATETIME NOT NULL DEFAULT GETDATE(), -- Fecha y hora de la consulta
-    motivo_consulta NVARCHAR(500) NULL, -- Motivo por el cual se atendio al paciente
-    anamnesis NVARCHAR(MAX) NULL,-- Informacion recopilada del due�o/paciente
-    examen_general NVARCHAR(MAX) NULL,-- Hallazgos del examen fisico general
-    diagnostico NVARCHAR(MAX) NULL,-- Diagnostico o impresion clinica
-    tratamiento NVARCHAR(MAX) NULL,-- Tratamiento general indicado
-    observaciones NVARCHAR(MAX) NULL,-- Observaciones complementarias
-    id_admin INT NOT NULL,-- Administrador/veterinario que registr� la consulta
+                                        id_consulta INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de la consulta clinica
+                                        id_historia_clinica INT NOT NULL,-- Historia clinica a la que pertenece la consulta
+                                        fecha DATETIME NOT NULL DEFAULT GETDATE(), -- Fecha y hora de la consulta
+                                        motivo_consulta NVARCHAR(500) NULL, -- Motivo por el cual se atendio al paciente
+                                        anamnesis NVARCHAR(MAX) NULL,-- Informacion recopilada del dueño/paciente
+                                        examen_general NVARCHAR(MAX) NULL,-- Hallazgos del examen fisico general
+                                        diagnostico NVARCHAR(MAX) NULL,-- Diagnostico o impresion clinica
+                                        tratamiento NVARCHAR(MAX) NULL,-- Tratamiento general indicado
+                                        observaciones NVARCHAR(MAX) NULL,-- Observaciones complementarias
 
-    CONSTRAINT FK_consultas_clinicas_historias
-        FOREIGN KEY (id_historia_clinica) REFERENCES dbo.historias_clinicas(id_historia_clinica),
-    CONSTRAINT FK_consultas_clinicas_admin
-        FOREIGN KEY (id_admin) REFERENCES dbo.usuarios(id_usuario)
+                                        CONSTRAINT FK_consultas_clinicas_historias
+                                            FOREIGN KEY (id_historia_clinica) REFERENCES dbo.historias_clinicas(id_historia_clinica),
+
 );
 GO
 
@@ -241,14 +234,14 @@ GO
 -- Lleva el historial de peso del paciente a lo largo del tiempo
 -- =========================================================
 CREATE TABLE dbo.peso_mascota (
-    id_peso INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro de peso
-    id_mascota INT NOT NULL,-- Mascota asociada
-    fecha DATETIME NOT NULL DEFAULT GETDATE(), -- Fecha de la medicion
-    peso DECIMAL(10,2) NOT NULL, -- Peso registrado
-    observaciones NVARCHAR(500) NULL, -- Comentarios sobre la medicion
+                                  id_peso INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro de peso
+                                  id_mascota INT NOT NULL,-- Mascota asociada
+                                  fecha DATETIME NOT NULL DEFAULT GETDATE(), -- Fecha de la medicion
+                                  peso DECIMAL(10,2) NOT NULL, -- Peso registrado
+                                  observaciones NVARCHAR(500) NULL, -- Comentarios sobre la medicion
 
-    CONSTRAINT FK_peso_mascota_mascotas
-        FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota)
+                                  CONSTRAINT FK_peso_mascota_mascotas
+                                      FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota)
 );
 GO
 
@@ -257,9 +250,8 @@ GO
 -- Catalogo maestro de alergias posibles
 -- =========================================================
 CREATE TABLE dbo.alergias (
-    id_alergia INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de la alergia
-    nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre de la alergia
-    descripcion NVARCHAR(500) NULL-- Descripcion de la alergia
+                              id_alergia INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de la alergia
+                              nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre de la alergia
 );
 GO
 
@@ -268,18 +260,18 @@ GO
 -- Relacion entre mascota y alergias registradas
 -- =========================================================
 CREATE TABLE dbo.alergias_mascota (
-    id_alergia_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro
-    id_mascota INT NOT NULL,-- Mascota afectada
-    id_alergia INT NOT NULL,-- Alergia registrada
-    severidad NVARCHAR(20) NULL,-- LEVE, MODERADA, GRAVE
-    observaciones NVARCHAR(500) NULL,-- Comentarios sobre la alergia
+                                      id_alergia_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro
+                                      id_mascota INT NOT NULL,-- Mascota afectada
+                                      id_alergia INT NOT NULL,-- Alergia registrada
+                                      severidad NVARCHAR(20) NULL,-- LEVE, MODERADA, GRAVE
+                                      observaciones NVARCHAR(500) NULL,-- Comentarios sobre la alergia
 
-    CONSTRAINT FK_alergias_mascota_mascotas
-        FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
-    CONSTRAINT FK_alergias_mascota_alergias
-        FOREIGN KEY (id_alergia) REFERENCES dbo.alergias(id_alergia),
-    CONSTRAINT CK_alergias_mascota_severidad
-        CHECK (severidad IN ('LEVE', 'MODERADA', 'GRAVE') OR severidad IS NULL)
+                                      CONSTRAINT FK_alergias_mascota_mascotas
+                                          FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
+                                      CONSTRAINT FK_alergias_mascota_alergias
+                                          FOREIGN KEY (id_alergia) REFERENCES dbo.alergias(id_alergia),
+                                      CONSTRAINT CK_alergias_mascota_severidad
+                                          CHECK (severidad IN ('LEVE', 'MODERADA', 'GRAVE') OR severidad IS NULL)
 );
 GO
 
@@ -288,9 +280,8 @@ GO
 -- Catalogo maestro de vacunas
 -- =========================================================
 CREATE TABLE dbo.vacunas (
-    id_vacuna INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de vacuna
-    nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre de la vacuna
-    descripcion NVARCHAR(500) NULL-- Descripcion general
+                             id_vacuna INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de vacuna
+                             nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre de la vacuna
 );
 GO
 
@@ -299,17 +290,17 @@ GO
 -- Historial de vacunacion de cada mascota
 -- =========================================================
 CREATE TABLE dbo.vacunas_mascota (
-    id_vacuna_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro de vacunacion
-    id_mascota INT NOT NULL,-- Mascota vacunada
-    id_vacuna INT NOT NULL,-- Vacuna aplicada
-    fecha_aplicacion DATE NOT NULL,-- Fecha en la que se aplico la vacuna
-    proxima_dosis DATE NULL,-- Proxima fecha sugerida
-    observaciones NVARCHAR(500) NULL,-- Notas extras
+                                     id_vacuna_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro de vacunacion
+                                     id_mascota INT NOT NULL,-- Mascota vacunada
+                                     id_vacuna INT NOT NULL,-- Vacuna aplicada
+                                     fecha_aplicacion DATE NOT NULL,-- Fecha en la que se aplico la vacuna
+                                     proxima_dosis DATE NULL,-- Proxima fecha sugerida
+                                     observaciones NVARCHAR(500) NULL,-- Notas extras
 
-    CONSTRAINT FK_vacunas_mascota_mascotas
-        FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
-    CONSTRAINT FK_vacunas_mascota_vacunas
-        FOREIGN KEY (id_vacuna) REFERENCES dbo.vacunas(id_vacuna)
+                                     CONSTRAINT FK_vacunas_mascota_mascotas
+                                         FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
+                                     CONSTRAINT FK_vacunas_mascota_vacunas
+                                         FOREIGN KEY (id_vacuna) REFERENCES dbo.vacunas(id_vacuna)
 );
 GO
 
@@ -319,10 +310,9 @@ GO
 -- Ej: antiparasitario interno, externo, marca X, etc.
 -- =========================================================
 CREATE TABLE dbo.desparasitaciones (
-    id_desparasitacion INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del desparasitante
-    nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre del producto o tipo (ej: Ivermectina, Pipeta Frontline, etc.)
-    tipo NVARCHAR(50) NULL,-- Tipo: INTERNO / EXTERNO
-    descripcion NVARCHAR(500) NULL-- Descripcion general
+                                       id_desparasitacion INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del desparasitante
+                                       nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre del producto o tipo (ej: Ivermectina, Pipeta Frontline, etc.)
+                                       tipo NVARCHAR(50) NULL,-- Tipo: INTERNO / EXTERNO
 );
 GO
 -- =========================================================
@@ -331,20 +321,20 @@ GO
 -- Similar a vacunas_mascota
 -- =========================================================
 CREATE TABLE dbo.desparasitaciones_mascota (
-    id_desparasitacion_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro
-    id_mascota INT NOT NULL,-- Mascota desparasitada
-    id_desparasitacion INT NOT NULL,-- Tipo/producto utilizado
-    fecha_aplicacion DATE NOT NULL,-- Fecha en la que se realizo la desparasitacion
-    proxima_dosis DATE NULL,-- Fecha recomendada para la siguiente desparasitacion
-    tipo NVARCHAR(50) NULL,-- INTERNO / EXTERNO (redundante pero �til para consulta r�pida)
-    observaciones NVARCHAR(500) NULL,-- Comentarios adicionales (ej: reaccion, dosis especial, etc.)
+                                               id_desparasitacion_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro
+                                               id_mascota INT NOT NULL,-- Mascota desparasitada
+                                               id_desparasitacion INT NOT NULL,-- Tipo/producto utilizado
+                                               fecha_aplicacion DATE NOT NULL,-- Fecha en la que se realizo la desparasitacion
+                                               proxima_dosis DATE NULL,-- Fecha recomendada para la siguiente desparasitacion
+                                               tipo NVARCHAR(50) NULL,-- INTERNO / EXTERNO (redundante pero útil para consulta rápida)
+                                               observaciones NVARCHAR(500) NULL,-- Comentarios adicionales (ej: reaccion, dosis especial, etc.)
 
-    CONSTRAINT FK_desparasitaciones_mascota_mascotas
-        FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
-    CONSTRAINT FK_desparasitaciones_mascota_desparasitaciones
-        FOREIGN KEY (id_desparasitacion) REFERENCES dbo.desparasitaciones(id_desparasitacion),
-    CONSTRAINT CK_desparasitaciones_tipo
-        CHECK (tipo IN ('INTERNO', 'EXTERNO') OR tipo IS NULL)
+                                               CONSTRAINT FK_desparasitaciones_mascota_mascotas
+                                                   FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
+                                               CONSTRAINT FK_desparasitaciones_mascota_desparasitaciones
+                                                   FOREIGN KEY (id_desparasitacion) REFERENCES dbo.desparasitaciones(id_desparasitacion),
+                                               CONSTRAINT CK_desparasitaciones_tipo
+                                                   CHECK (tipo IN ('INTERNO', 'EXTERNO') OR tipo IS NULL)
 );
 GO
 -- =========================================================
@@ -352,9 +342,8 @@ GO
 -- Catalogo maestro de enfermedades
 -- =========================================================
 CREATE TABLE dbo.enfermedades (
-    id_enfermedad INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de enfermedad
-    nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre de la enfermedad
-    descripcion NVARCHAR(500) NULL-- Descripcion general
+                                  id_enfermedad INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de enfermedad
+                                  nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre de la enfermedad
 );
 GO
 
@@ -363,19 +352,19 @@ GO
 -- Historial de enfermedades/diagnosticos de una mascota
 -- =========================================================
 CREATE TABLE dbo.enfermedades_mascota (
-    id_enfermedad_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro
-    id_mascota INT NOT NULL,-- Mascota asociada
-    id_enfermedad INT NOT NULL,-- Enfermedad registrada
-    fecha_diagnostico DATE NULL,-- Fecha del diagnostico
-    estado NVARCHAR(20) NULL, -- ACTIVA, CURADA, CRONICA
-    observaciones NVARCHAR(500) NULL,-- Comentarios adicionales
+                                          id_enfermedad_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro
+                                          id_mascota INT NOT NULL,-- Mascota asociada
+                                          id_enfermedad INT NOT NULL,-- Enfermedad registrada
+                                          fecha_diagnostico DATE NULL,-- Fecha del diagnostico
+                                          estado NVARCHAR(20) NULL, -- ACTIVA, CURADA, CRONICA
+                                          observaciones NVARCHAR(500) NULL,-- Comentarios adicionales
 
-    CONSTRAINT FK_enfermedades_mascota_mascotas
-        FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
-    CONSTRAINT FK_enfermedades_mascota_enfermedades
-        FOREIGN KEY (id_enfermedad) REFERENCES dbo.enfermedades(id_enfermedad),
-    CONSTRAINT CK_enfermedades_mascota_estado
-        CHECK (estado IN ('ACTIVA', 'CURADA', 'CRONICA') OR estado IS NULL)
+                                          CONSTRAINT FK_enfermedades_mascota_mascotas
+                                              FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
+                                          CONSTRAINT FK_enfermedades_mascota_enfermedades
+                                              FOREIGN KEY (id_enfermedad) REFERENCES dbo.enfermedades(id_enfermedad),
+                                          CONSTRAINT CK_enfermedades_mascota_estado
+                                              CHECK (estado IN ('ACTIVA', 'CURADA', 'CRONICA') OR estado IS NULL)
 );
 GO
 
@@ -384,9 +373,8 @@ GO
 -- Catalogo maestro de medicamentos
 -- =========================================================
 CREATE TABLE dbo.medicamentos (
-    id_medicamento INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del medicamento
-    nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre del medicamento
-    descripcion NVARCHAR(500) NULL-- Descripcion del medicamento
+                                  id_medicamento INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del medicamento
+                                  nombre NVARCHAR(150) NOT NULL UNIQUE,-- Nombre del medicamento
 );
 GO
 
@@ -395,18 +383,18 @@ GO
 -- Tratamientos/medicacion indicados dentro de una consulta
 -- =========================================================
 CREATE TABLE dbo.tratamientos (
-    id_tratamiento INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del tratamiento
-    id_consulta INT NOT NULL,-- Consulta clinica asociada
-    id_medicamento INT NULL,-- Medicamento asociado si corresponde
-    dosis NVARCHAR(100) NULL,-- Dosis indicada
-    frecuencia NVARCHAR(100) NULL,-- Frecuencia de administracion
-    duracion_dias INT NULL,-- Cuantos dias dura el tratamiento
-    indicaciones NVARCHAR(1000) NULL,-- Instrucciones de uso o comentarios
+                                  id_tratamiento INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del tratamiento
+                                  id_consulta INT NOT NULL,-- Consulta clinica asociada
+                                  id_medicamento INT NULL,-- Medicamento asociado si corresponde
+                                  dosis NVARCHAR(100) NULL,-- Dosis indicada
+                                  frecuencia NVARCHAR(100) NULL,-- Frecuencia de administracion
+                                  duracion_dias INT NULL,-- Cuantos dias dura el tratamiento
+                                  indicaciones NVARCHAR(1000) NULL,-- Instrucciones de uso o comentarios
 
-    CONSTRAINT FK_tratamientos_consultas
-        FOREIGN KEY (id_consulta) REFERENCES dbo.consultas_clinicas(id_consulta),
-    CONSTRAINT FK_tratamientos_medicamentos
-        FOREIGN KEY (id_medicamento) REFERENCES dbo.medicamentos(id_medicamento)
+                                  CONSTRAINT FK_tratamientos_consultas
+                                      FOREIGN KEY (id_consulta) REFERENCES dbo.consultas_clinicas(id_consulta),
+                                  CONSTRAINT FK_tratamientos_medicamentos
+                                      FOREIGN KEY (id_medicamento) REFERENCES dbo.medicamentos(id_medicamento)
 );
 GO
 
@@ -416,15 +404,15 @@ GO
 -- Ej: analisis, ecografia, radiografia, etc.
 -- =========================================================
 CREATE TABLE dbo.estudios_clinicos (
-    id_estudio INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del estudio
-    id_consulta INT NOT NULL,-- Consulta a la que pertenece
-    tipo_estudio NVARCHAR(150) NOT NULL,-- Tipo de estudio realizado
-    resultado NVARCHAR(MAX) NULL, -- Resultado o resumen del estudio
-    fecha DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha del estudio
-    observaciones NVARCHAR(1000) NULL, -- Observaciones adicionales
+                                       id_estudio INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del estudio
+                                       id_consulta INT NOT NULL,-- Consulta a la que pertenece
+                                       tipo_estudio NVARCHAR(150) NOT NULL,-- Tipo de estudio realizado
+                                       resultado NVARCHAR(MAX) NULL, -- Resultado o resumen del estudio
+                                       fecha DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha del estudio
+                                       observaciones NVARCHAR(1000) NULL, -- Observaciones adicionales
 
-    CONSTRAINT FK_estudios_clinicos_consultas
-        FOREIGN KEY (id_consulta) REFERENCES dbo.consultas_clinicas(id_consulta)
+                                       CONSTRAINT FK_estudios_clinicos_consultas
+                                           FOREIGN KEY (id_consulta) REFERENCES dbo.consultas_clinicas(id_consulta)
 );
 GO
 
@@ -434,15 +422,15 @@ GO
 -- Ej: fotos, PDFs, radiografias, recetas escaneadas
 -- =========================================================
 CREATE TABLE dbo.archivos_clinicos (
-    id_archivo INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del archivo
-    id_consulta INT NOT NULL,-- Consulta a la que pertenece el archivo
-    url_archivo NVARCHAR(500) NOT NULL,-- Ruta o URL donde esta guardado el archivo
-    tipo_archivo NVARCHAR(50) NOT NULL, -- Tipo: IMAGEN, PDF, RADIOGRAFIA, etc.
-    descripcion NVARCHAR(500) NULL,-- Descripcion del archivo
-    fecha DATETIME NOT NULL DEFAULT GETDATE(),  -- Fecha de carga
+                                       id_archivo INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del archivo
+                                       id_consulta INT NOT NULL,-- Consulta a la que pertenece el archivo
+                                       url_archivo NVARCHAR(500) NOT NULL,-- Ruta o URL donde esta guardado el archivo
+                                       tipo_archivo NVARCHAR(50) NOT NULL, -- Tipo: IMAGEN, PDF, RADIOGRAFIA, etc.
+                                       descripcion NVARCHAR(500) NULL,-- Descripcion del archivo
+                                       fecha DATETIME NOT NULL DEFAULT GETDATE(),  -- Fecha de carga
 
-    CONSTRAINT FK_archivos_clinicos_consultas
-        FOREIGN KEY (id_consulta) REFERENCES dbo.consultas_clinicas(id_consulta)
+                                       CONSTRAINT FK_archivos_clinicos_consultas
+                                           FOREIGN KEY (id_consulta) REFERENCES dbo.consultas_clinicas(id_consulta)
 );
 GO
 
@@ -452,54 +440,1755 @@ GO
 -- =========================================================
 
 CREATE INDEX IX_mascotas_id_usuario
-ON dbo.mascotas(id_usuario);
+    ON dbo.mascotas(id_usuario);
 GO
 
 CREATE INDEX IX_reservas_fecha_hora
-ON dbo.reservas(fecha, hora);
+    ON dbo.reservas(fecha, hora);
 GO
 
 CREATE INDEX IX_reservas_id_usuario
-ON dbo.reservas(id_usuario);
+    ON dbo.reservas(id_usuario);
 GO
 
-CREATE INDEX IX_reservas_id_mascota
-ON dbo.reservas(id_mascota);
-GO
+
 
 CREATE INDEX IX_consultas_clinicas_historia_fecha
-ON dbo.consultas_clinicas(id_historia_clinica, fecha DESC);
+    ON dbo.consultas_clinicas(id_historia_clinica, fecha DESC);
 GO
 
 CREATE INDEX IX_peso_mascota_id_mascota_fecha
-ON dbo.peso_mascota(id_mascota, fecha DESC);
+    ON dbo.peso_mascota(id_mascota, fecha DESC);
 GO
 
 CREATE INDEX IX_vacunas_mascota_id_mascota
-ON dbo.vacunas_mascota(id_mascota);
+    ON dbo.vacunas_mascota(id_mascota);
 GO
 
 CREATE INDEX IX_desparasitaciones_mascota_id_mascota
-ON dbo.desparasitaciones_mascota(id_mascota);
+    ON dbo.desparasitaciones_mascota(id_mascota);
 GO
 
 CREATE INDEX IX_enfermedades_mascota_id_mascota
-ON dbo.enfermedades_mascota(id_mascota);
+    ON dbo.enfermedades_mascota(id_mascota);
 GO
 
 CREATE INDEX IX_alergias_mascota_id_mascota
-ON dbo.alergias_mascota(id_mascota);
+    ON dbo.alergias_mascota(id_mascota);
 GO
-
+CREATE UNIQUE INDEX UX_medicamentos_nombre
+    ON medicamentos (nombre);
+CREATE UNIQUE INDEX UX_vacunas_nombre
+    ON vacunas(nombre);
 -- =========================================================
 -- DATOS INICIALES OPCIONALES
 -- Algunos servicios basicos
 -- =========================================================
 INSERT INTO dbo.servicios (nombre, descripcion, duracion_minutos, precio_base, activo)
 VALUES
-('BA�O', 'Servicio de ba�o para mascota', 60, 5000, 1),
-('CORTE', 'Servicio de corte de pelo', 60, 6000, 1),
-('BA�O Y CORTE', 'Servicio completo de ba�o y corte', 90, 9000, 1),
-('CORTE DE U�AS', 'Corte y mantenimiento de u�as', 20, 2500, 1),
-('LIMPIEZA DE O�DOS', 'Limpieza e higiene de o�dos', 20, 2200, 1);
+    ('BAÑO', 'Servicio de baño para mascota', 60, 5000, 1),
+    ('BAÑO Y CORTE', 'Servicio completo de baño y corte', 90, 9000, 1),
+    ('CORTE DE UÑAS', 'Corte y mantenimiento de uñas', 20, 2500, 1),
+    ('LIMPIEZA DE OÍDOS', 'Limpieza e higiene de oídos', 20, 2200, 1);
 GO
+
+/*
+---------------INSERTS DE PRUEBAS----------------------
+													*/
+INSERT INTO dbo.usuarios (nombre, apellido, email, telefono, password_hash, rol)
+VALUES
+('admin', 'admin', 'admin@gmail.com', '3571551111', 'admin123', 'ADMIN'),
+('Maria', 'Gomez', 'maria.gomez@gmail.com', '3571552222', 'hash123', 'CLIENTE'),
+('Lucas', 'Fernandez', 'lucas.fernandez@gmail.com', '3571553333', 'hash123', 'CLIENTE'),
+('Sofia', 'Lopez', 'sofia.lopez@gmail.com', '3571554444', 'hash123', 'CLIENTE'),
+('Martin', 'Diaz', 'martin.diaz@gmail.com', '3571555555', 'hash123', 'CLIENTE');
+
+
+INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
+VALUES
+    (1, 'Rocky', 'Perro', 'Labrador', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'DOCIL'),
+    (1, 'Milo', 'Gato', 'Siames', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
+    (1, 'Luna', 'Perro', 'Caniche', 'CHICO', '2020-05-10', 'HEMBRA', 'LARGO', 'JUGUETONA');
+
+INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
+VALUES
+    (2, 'Toby', 'Perro', 'Bulldog', 'MEDIANO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
+    (2, 'Nina', 'Gato', 'Persa', 'CHICO', '2020-05-10',  'HEMBRA', 'LARGO', 'DOCIL');
+
+INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
+VALUES
+    (3, 'Thor', 'Perro', 'Ovejero Aleman', 'GRANDE', '2020-05-10', 'MACHO', 'LARGO', 'GUARDIAN'),
+    (3, 'Simba', 'Gato', 'Comun', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'INQUIETO'),
+    (3, 'Kira', 'Perro', 'Beagle', 'MEDIANO', '2020-05-10',  'HEMBRA', 'CORTO', 'ACTIVO');
+
+INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
+VALUES
+    (4, 'Lola', 'Perro', 'Golden Retriever', 'GRANDE', '2020-05-10', 'HEMBRA', 'LARGO', 'DOCIL'),
+    (4, 'Felix', 'Gato', 'Comun', 'CHICO', '2020-05-10', 'MACHO', 'CORTO', 'TRANQUILO');
+
+
+INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento,  sexo, tipo_pelaje, comportamiento)
+VALUES
+    (5, 'Bruno', 'Perro', 'Rottweiler', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'GUARDIAN'),
+    (5, 'Mia', 'Gato', 'Siames', 'CHICO', '2020-05-10', 'HEMBRA', 'CORTO', 'JUGUETONA'),
+    (5, 'Zeus', 'Perro', 'Pitbull', 'MEDIANO', '2020-05-10',  'MACHO', 'CORTO', 'ENERGICO');
+
+
+
+
+
+
+
+
+
+
+/*============================================================================0
+
+  procedimientos de registrar y login
+
+
+================================================================================*/
+
+go--endpoint
+CREATE OR ALTER PROCEDURE dbo.sp_registrar_usuario
+    @json NVARCHAR(MAX)
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+@nombre NVARCHAR(100),
+        @apellido NVARCHAR(100),
+        @email NVARCHAR(150),
+        @telefono NVARCHAR(50),
+        @password NVARCHAR(255),
+        @password_hash VARBINARY(64);
+
+    -- 🔹 Parsear JSON
+SELECT
+    @nombre = JSON_VALUE(@json, '$.nombre'),
+    @apellido = JSON_VALUE(@json, '$.apellido'),
+    @email = JSON_VALUE(@json, '$.email'),
+    @telefono = JSON_VALUE(@json, '$.telefono'),
+    @password = JSON_VALUE(@json, '$.password');
+
+-- 🔐 Hashear password
+SET @password_hash = HASHBYTES('SHA2_256', @password);
+
+    -- 🔹 Validación básica
+    IF @email IS NULL OR @password IS NULL
+BEGIN
+SELECT
+    0 AS success,
+    'Email y contraseña son obligatorios' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    -- 🔹 Validar duplicado
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.usuarios
+        WHERE email = @email
+    )
+BEGIN
+SELECT
+    0 AS success,
+    'El email ya está registrado' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    -- 🔹 Insertar usuario
+INSERT INTO dbo.usuarios (
+    nombre,
+    apellido,
+    email,
+    telefono,
+    password_hash,
+    rol,
+    activo,
+    fecha_alta
+)
+VALUES (
+           @nombre,
+           @apellido,
+           @email,
+           @telefono,
+           @password_hash,
+           'CLIENTE', -- 🔥 fijo
+           1,
+           GETDATE()
+       );
+
+DECLARE @id_usuario INT = SCOPE_IDENTITY();
+
+    -- ✅ Respuesta
+SELECT
+    1 AS success,
+    'Usuario registrado correctamente' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    u.id_usuario,
+                    u.nombre,
+                    u.apellido,
+                    (u.nombre + ' ' + u.apellido) AS nombre_completo,
+                    u.email,
+                    u.telefono,
+                    u.rol
+                FROM dbo.usuarios u
+                WHERE u.id_usuario = @id_usuario
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+        ) AS usuario
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END;
+GO
+go--endpointt
+CREATE OR ALTER PROCEDURE dbo.sp_login_usuario_json
+    @json NVARCHAR(MAX)
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+@email NVARCHAR(150),
+        @password NVARCHAR(255),
+        @password_hash VARBINARY(64);
+
+    -- 🔹 Parsear JSON
+SELECT
+    @email = JSON_VALUE(@json, '$.email'),
+    @password = JSON_VALUE(@json, '$.password');
+
+-- 🔐 Hashear password
+SET @password_hash = HASHBYTES('SHA2_256', @password);
+
+    -- 🔹 Validación
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.usuarios
+        WHERE email = @email
+          AND password_hash = @password_hash
+          AND activo = 1
+    )
+BEGIN
+SELECT
+    0 AS success,
+    'Credenciales incorrectas' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+RETURN;
+END
+
+    -- ✅ Login correcto
+SELECT
+    1 AS success,
+    'Login correcto' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    u.id_usuario,
+                    u.nombre,
+                    u.apellido,
+                    (u.nombre + ' ' + u.apellido) AS nombre_completo,
+                    u.email,
+                    u.telefono,
+                    u.rol
+                FROM dbo.usuarios u
+                WHERE u.email = @email
+                  AND u.password_hash = @password_hash
+                  AND u.activo = 1
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+        ) AS usuario
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END;
+GO
+
+
+/*============================================================================0
+
+  procedimientos de obtener, editar e insertar productos
+
+
+================================================================================*/
+
+
+GO--endpoint
+CREATE OR ALTER PROCEDURE dbo.sp_get_productos_json
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+SELECT
+    p.id_producto,
+    p.nombre,
+    p.descripcion,
+    p.precio,
+    p.categoria,
+    p.imagen_url,
+    p.stock,
+    p.activo,
+    p.fecha_alta
+FROM dbo.productos p
+WHERE p.activo = 1
+ORDER BY p.nombre
+    FOR JSON PATH, ROOT('productos');
+END;
+GO
+
+GO--endpoint
+CREATE OR ALTER PROCEDURE dbo.sp_insert_producto_json
+    @json NVARCHAR(MAX)
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+
+        DECLARE
+@nombre NVARCHAR(200),
+            @descripcion NVARCHAR(MAX),
+            @precio DECIMAL(10,2),
+            @categoria NVARCHAR(100),
+            @imagen_url NVARCHAR(500),
+            @stock INT;
+
+        -- 🔹 Parsear JSON
+SELECT
+    @nombre = JSON_VALUE(@json, '$.nombre'),
+    @descripcion = JSON_VALUE(@json, '$.descripcion'),
+    @precio = CAST(JSON_VALUE(@json, '$.precio') AS DECIMAL(10,2)),
+    @categoria = JSON_VALUE(@json, '$.categoria'),
+    @imagen_url = JSON_VALUE(@json, '$.imagen_url'),
+    @stock = CAST(JSON_VALUE(@json, '$.stock') AS INT);
+
+-- 🔹 Validación
+IF @nombre IS NULL OR @precio IS NULL
+BEGIN
+SELECT
+    0 AS success,
+    'Faltan datos obligatorios' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+RETURN;
+END
+
+        -- 🔹 Insert
+INSERT INTO dbo.productos (
+    nombre,
+    descripcion,
+    precio,
+    categoria,
+    imagen_url,
+    stock,
+    activo,
+    fecha_alta
+)
+VALUES (
+           @nombre,
+           @descripcion,
+           @precio,
+           @categoria,
+           @imagen_url,
+           @stock,
+           1,
+           GETDATE()
+       );
+
+DECLARE @id_producto INT = SCOPE_IDENTITY();
+
+        -- 🔹 Respuesta
+SELECT
+    1 AS success,
+    'Producto creado correctamente' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT *
+                FROM dbo.productos
+                WHERE id_producto = @id_producto
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+            ) AS producto
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
+END;
+GO
+
+go
+GO--endpoint
+CREATE OR ALTER PROCEDURE dbo.sp_update_producto_json
+    @json NVARCHAR(MAX)
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+@id_producto INT,
+        @nombre NVARCHAR(200),
+        @descripcion NVARCHAR(MAX),
+        @precio DECIMAL(10,2),
+        @categoria NVARCHAR(100),
+        @imagen_url NVARCHAR(500),
+        @stock INT;
+
+    -- 🔹 Parsear JSON
+SELECT
+    @id_producto = CAST(JSON_VALUE(@json, '$.id_producto') AS INT),
+    @nombre = JSON_VALUE(@json, '$.nombre'),
+    @descripcion = JSON_VALUE(@json, '$.descripcion'),
+    @precio = CAST(JSON_VALUE(@json, '$.precio') AS DECIMAL(10,2)),
+    @categoria = JSON_VALUE(@json, '$.categoria'),
+    @imagen_url = JSON_VALUE(@json, '$.imagen_url'),
+    @stock = CAST(JSON_VALUE(@json, '$.stock') AS INT);
+
+-- 🔹 Validar existencia
+IF NOT EXISTS (SELECT 1 FROM dbo.productos WHERE id_producto = @id_producto)
+BEGIN
+SELECT
+    0 AS success,
+    'Producto no existe' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    -- 🔹 Update
+UPDATE dbo.productos
+SET
+    nombre = @nombre,
+    descripcion = @descripcion,
+    precio = @precio,
+    categoria = @categoria,
+    imagen_url = ISNULL(@imagen_url, imagen_url),
+    stock = @stock
+WHERE id_producto = @id_producto;
+
+-- ✅ Respuesta
+SELECT
+    1 AS success,
+    'Producto actualizado correctamente' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT *
+                FROM dbo.productos
+                WHERE id_producto = @id_producto
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+        ) AS producto
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END;
+GO
+/*
+DECLARE @json NVARCHAR(MAX) = '
+{
+  "nombre": "Collar antipulgas",
+  "descripcion": "Para perros medianos",
+  "precio": 1500.50,
+  "categoria": "Accesorios",
+  "imagen_url": "https://...",
+  "stock": 10
+}';
+
+EXEC dbo.sp_insert_producto_json @json;
+DECLARE @json NVARCHAR(MAX) = '
+{
+  "id_producto": 1,
+  "nombre": "Collar premium",
+  "descripcion": "Actualizado",
+  "precio": 2000,
+  "categoria": "Accesorios",
+  "imagen_url": "https://...",
+  "stock": 20
+}';
+
+EXEC dbo.sp_update_producto_json @json;*/
+
+go
+
+
+/*============================================================================0
+
+  procedimientos para traer mascotas de clientes , insertarlas y editarlas
+
+
+================================================================================*/
+GO--endpoint
+CREATE OR ALTER PROCEDURE dbo.sp_get_mascotas_por_usuario_json
+    @json NVARCHAR(MAX)
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @id_usuario INT;
+
+    -- 🔹 Parsear JSON
+SELECT
+    @id_usuario = CAST(JSON_VALUE(@json, '$.id_usuario') AS INT);
+
+-- 🔹 Validación básica
+IF @id_usuario IS NULL
+BEGIN
+SELECT
+    0 AS success,
+    'id_usuario es obligatorio' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    -- 🔹 Query principal
+SELECT
+    1 AS success,
+    JSON_QUERY(
+            (
+                SELECT
+                    m.id_mascota,
+                    m.nombre,
+                    UPPER(m.especie) AS especie,
+                    m.raza,
+                    m.fecha_nacimiento
+                FROM dbo.mascotas m
+                WHERE m.id_usuario = @id_usuario
+                  AND m.activo = 1
+                ORDER BY m.nombre
+                FOR JSON PATH
+        )
+        ) AS mascotas
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END;
+GO
+--en el detalle llamar a este sp: dbo.sp_get_informacioncompleta_mascota
+--para editar la mascota le permitimos usar el sp: dbo.sp_editar_infogeneral_mascota
+go
+
+GO--endpoint
+CREATE OR ALTER PROCEDURE dbo.sp_insert_mascota_json
+    @json NVARCHAR(MAX)
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+@id_usuario INT,
+        @nombre NVARCHAR(100),
+        @especie NVARCHAR(50),
+        @raza NVARCHAR(100),
+        @tamanio NVARCHAR(50),
+        @fecha_nacimiento DATE,
+        @sexo NVARCHAR(20),
+        @tipo_pelaje NVARCHAR(50),
+        @alergias_general NVARCHAR(MAX),
+        @comportamiento NVARCHAR(MAX),
+        @observaciones NVARCHAR(MAX);
+
+    -- 🔹 Parsear JSON
+SELECT
+    @id_usuario = CAST(JSON_VALUE(@json, '$.id_usuario') AS INT),
+    @nombre = JSON_VALUE(@json, '$.nombre'),
+    @especie = JSON_VALUE(@json, '$.especie'),
+    @raza = JSON_VALUE(@json, '$.raza'),
+    @tamanio = JSON_VALUE(@json, '$.tamanio'),
+    @fecha_nacimiento = JSON_VALUE(@json, '$.fecha_nacimiento'),
+    @sexo = JSON_VALUE(@json, '$.sexo'),
+    @tipo_pelaje = JSON_VALUE(@json, '$.tipo_pelaje'),
+    @alergias_general = JSON_VALUE(@json, '$.alergias_general'),
+    @comportamiento = JSON_VALUE(@json, '$.comportamiento'),
+    @observaciones = JSON_VALUE(@json, '$.observaciones');
+
+-- 🔹 Validaciones mínimas
+IF @id_usuario IS NULL OR @nombre IS NULL OR @especie IS NULL
+BEGIN
+SELECT
+    0 AS success,
+    'id_usuario, nombre y especie son obligatorios' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    -- 🔹 Insertar
+INSERT INTO dbo.mascotas (
+    id_usuario,
+    nombre,
+    especie,
+    raza,
+    tamanio,
+    fecha_nacimiento,
+    sexo,
+    tipo_pelaje,
+    alergias_general,
+    comportamiento,
+    observaciones,
+    activo,
+    fecha_registro
+)
+VALUES (
+           @id_usuario,
+           @nombre,
+           UPPER(@especie), -- 🔥 consistente con UI
+           @raza,
+           @tamanio,
+           @fecha_nacimiento,
+           @sexo,
+           @tipo_pelaje,
+           @alergias_general,
+           @comportamiento,
+           @observaciones,
+           1,
+           GETDATE()
+       );
+
+DECLARE @id_mascota INT = SCOPE_IDENTITY();
+
+    -- ✅ Respuesta
+SELECT
+    1 AS success,
+    'Mascota registrada correctamente' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    m.id_mascota,
+                    m.nombre,
+                    m.especie,
+                    m.raza,
+                    m.tamanio,
+                    m.fecha_nacimiento,
+                    m.sexo
+                FROM dbo.mascotas m
+                WHERE m.id_mascota = @id_mascota
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+        ) AS mascota
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END;
+GO
+
+
+/*============================================================================0
+
+  procedimientos de administrador obtencion y modificacion de historias clinicas
+
+
+================================================================================*/
+
+go
+GO--endpoint
+CREATE OR ALTER PROCEDURE dbo.sp_get_clientes_con_mascotas_json_filtrado
+    @json NVARCHAR(MAX)
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @apellido NVARCHAR(100);
+
+    -- 🔹 Parsear JSON
+SELECT
+    @apellido = JSON_VALUE(@json, '$.apellido');
+
+SELECT
+    u.id_usuario,
+    u.nombre,
+    u.apellido,
+    (u.nombre + ' ' + u.apellido) AS nombre_completo,
+    u.email,
+    u.telefono,
+    u.activo,
+    u.fecha_alta,
+
+    JSON_QUERY(
+            (
+                SELECT
+                    m.id_mascota,
+                    m.nombre AS nombre_mascota,
+                    m.especie,
+                    m.raza,
+                    m.tamanio,
+                    m.fecha_nacimiento,
+                    m.sexo,
+                    m.tipo_pelaje,
+                    m.alergias_general,
+                    m.comportamiento,
+                    m.observaciones,
+                    m.activo,
+                    m.fecha_registro
+                FROM dbo.mascotas m
+                WHERE m.id_usuario = u.id_usuario
+                  AND m.activo = 1
+                ORDER BY m.nombre
+                FOR JSON PATH
+        )
+        ) AS mascotas
+
+FROM dbo.usuarios u
+WHERE u.rol = 'CLIENTE'
+  AND u.activo = 1
+  AND (
+    @apellido IS NULL
+        OR LTRIM(RTRIM(@apellido)) = ''
+        OR u.apellido COLLATE Latin1_General_CI_AI LIKE '%' + @apellido + '%'
+    )
+ORDER BY u.apellido, u.nombre
+    FOR JSON PATH, ROOT('clientes');
+
+END;
+GO
+
+
+--EXEC dbo.sp_get_clientes_con_mascotas_json;
+go--endpointt(vista admin)
+CREATE OR ALTER PROCEDURE dbo.sp_get_clientes_con_mascotas_json
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+SELECT
+    u.id_usuario,
+    u.nombre,
+    u.apellido,
+    (u.nombre + ' ' + u.apellido) AS nombre_completo,
+    u.email,
+    u.telefono,
+    u.activo,
+    u.fecha_alta,
+
+    JSON_QUERY(
+            (
+                SELECT
+                    m.id_mascota,
+                    m.nombre AS nombre_mascota,
+                    m.especie,
+                    m.raza,
+                    m.tamanio,
+                    m.fecha_nacimiento,
+                    m.sexo,
+                    m.tipo_pelaje,
+                    m.alergias_general,
+                    m.comportamiento,
+                    m.observaciones,
+                    m.activo,
+                    m.fecha_registro
+                FROM dbo.mascotas m
+                WHERE m.id_usuario = u.id_usuario
+                  AND m.activo = 1
+                ORDER BY m.nombre
+                FOR JSON PATH
+        )
+        ) AS mascotas
+
+FROM dbo.usuarios u
+WHERE u.rol = 'CLIENTE'
+  AND u.activo = 1
+ORDER BY u.apellido, u.nombre
+    FOR JSON PATH, ROOT('clientes');
+END;
+GO
+
+--DECLARE @json NVARCHAR(MAX) = '{ "id_usuario": 1,"id_mascota": 1}';
+--EXEC dbo.sp_get_informacioncompleta_mascota @json;
+go--endpointt
+CREATE OR ALTER PROCEDURE dbo.sp_get_informacioncompleta_mascota
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+@id_usuario INT = JSON_VALUE(@json, '$.id_usuario'),
+        @id_mascota INT = JSON_VALUE(@json, '$.id_mascota');
+
+    -- Validación básica
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.mascotas
+        WHERE id_mascota = @id_mascota
+          AND id_usuario = @id_usuario
+    )
+BEGIN
+        RAISERROR('La mascota no pertenece al usuario', 16, 1);
+        RETURN;
+END
+
+SELECT
+    m.id_mascota,
+    m.nombre,
+    m.especie,
+    m.raza,
+    m.tamanio,
+    m.fecha_nacimiento,
+    m.sexo,
+    m.tipo_pelaje,
+    m.comportamiento,
+    m.observaciones,
+
+    -- 🐾 PESO HISTÓRICO
+    ISNULL(JSON_QUERY((
+        SELECT fecha, peso, observaciones
+        FROM dbo.peso_mascota p
+        WHERE p.id_mascota = m.id_mascota
+        ORDER BY fecha DESC
+        FOR JSON PATH
+               )), '[]') AS pesos,
+
+    -- 🤧 ALERGIAS
+    ISNULL(JSON_QUERY((
+        SELECT a.nombre, am.severidad, am.observaciones
+        FROM dbo.alergias_mascota am
+                 JOIN dbo.alergias a ON a.id_alergia = am.id_alergia
+        WHERE am.id_mascota = m.id_mascota
+        FOR JSON PATH
+               )), '[]') AS alergias,
+
+    -- 💉 VACUNAS
+    ISNULL(JSON_QUERY((
+        SELECT v.nombre, vm.fecha_aplicacion, vm.proxima_dosis
+        FROM dbo.vacunas_mascota vm
+                 JOIN dbo.vacunas v ON v.id_vacuna = vm.id_vacuna
+        WHERE vm.id_mascota = m.id_mascota
+        FOR JSON PATH
+               )), '[]') AS vacunas,
+
+    -- 🦠 DESPARASITACIONES
+    ISNULL(JSON_QUERY((
+        SELECT d.nombre, dm.fecha_aplicacion, dm.proxima_dosis, dm.tipo
+        FROM dbo.desparasitaciones_mascota dm
+                 JOIN dbo.desparasitaciones d ON d.id_desparasitacion = dm.id_desparasitacion
+        WHERE dm.id_mascota = m.id_mascota
+        FOR JSON PATH
+               )), '[]') AS desparasitaciones,
+
+    -- 🧬 ENFERMEDADES
+    ISNULL(JSON_QUERY((
+        SELECT e.nombre, em.estado, em.fecha_diagnostico
+        FROM dbo.enfermedades_mascota em
+                 JOIN dbo.enfermedades e ON e.id_enfermedad = em.id_enfermedad
+        WHERE em.id_mascota = m.id_mascota
+        FOR JSON PATH
+               )), '[]') AS enfermedades,
+
+    -- 🏥 HISTORIA CLÍNICA
+    ISNULL(JSON_QUERY((
+        SELECT
+            hc.id_historia_clinica,
+
+            (
+                SELECT
+                    c.id_consulta,
+                    c.fecha,
+                    c.motivo_consulta,
+                    c.diagnostico,
+                    c.tratamiento,
+
+                    -- 💊 TRATAMIENTOS
+                    JSON_QUERY((
+                        SELECT med.nombre, t.dosis, t.frecuencia, t.duracion_dias
+                        FROM dbo.tratamientos t
+                                 LEFT JOIN dbo.medicamentos med ON med.id_medicamento = t.id_medicamento
+                        WHERE t.id_consulta = c.id_consulta
+                        FOR JSON PATH
+                        )) AS tratamientos,
+
+                    -- 🧪 ESTUDIOS
+                    JSON_QUERY((
+                        SELECT tipo_estudio, resultado, fecha
+                        FROM dbo.estudios_clinicos e
+                        WHERE e.id_consulta = c.id_consulta
+                        FOR JSON PATH
+                        )) AS estudios,
+
+                    -- 📎 ARCHIVOS
+                    JSON_QUERY((
+                        SELECT url_archivo, tipo_archivo, descripcion
+                        FROM dbo.archivos_clinicos a
+                        WHERE a.id_consulta = c.id_consulta
+                        FOR JSON PATH
+                        )) AS archivos
+
+                FROM dbo.consultas_clinicas c
+                WHERE c.id_historia_clinica = hc.id_historia_clinica
+                ORDER BY c.fecha DESC
+        FOR JSON PATH
+               ) AS consultas
+
+            FROM dbo.historias_clinicas hc
+            WHERE hc.id_mascota = m.id_mascota
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )), '{}') AS historia_clinica
+
+FROM dbo.mascotas m
+WHERE m.id_mascota = @id_mascota
+  AND m.id_usuario = @id_usuario
+    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+END;
+GO
+
+--DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1,  "comportamiento": "MUY ACTIVO",  "observaciones": "Mejoró después del tratamiento"}';
+--EXEC dbo.sp_editar_infogeneral_mascota @json;
+--procedimiento para editar informacion general del paciente
+go--endpoint
+CREATE OR ALTER PROCEDURE dbo.sp_editar_infogeneral_mascota
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE
+@id_usuario INT,
+    @id_mascota INT,
+    @nombre NVARCHAR(100),
+    @especie NVARCHAR(50),
+    @raza NVARCHAR(100),
+    @tamanio NVARCHAR(20),
+    @fecha_nacimiento DATE,
+    @sexo NVARCHAR(20),
+    @tipo_pelaje NVARCHAR(100),
+    @alergias_general NVARCHAR(500),
+    @comportamiento NVARCHAR(300),
+    @observaciones NVARCHAR(1000);
+
+SELECT
+    @id_usuario = TRY_CAST(JSON_VALUE(@json, '$.id_usuario') AS INT),
+    @id_mascota = TRY_CAST(JSON_VALUE(@json, '$.id_mascota') AS INT),
+    @nombre = JSON_VALUE(@json, '$.nombre'),
+    @especie = JSON_VALUE(@json, '$.especie'),
+    @raza = JSON_VALUE(@json, '$.raza'),
+    @tamanio = JSON_VALUE(@json, '$.tamanio'),
+    @sexo = JSON_VALUE(@json, '$.sexo'),
+    @tipo_pelaje = JSON_VALUE(@json, '$.tipo_pelaje'),
+    @alergias_general = JSON_VALUE(@json, '$.alergias_general'),
+    @comportamiento = JSON_VALUE(@json, '$.comportamiento'),
+    @observaciones = JSON_VALUE(@json, '$.observaciones');
+
+-- 🔥 CLAVE
+SET @fecha_nacimiento = TRY_CONVERT(DATE, JSON_VALUE(@json, '$.fecha_nacimiento'));
+
+    -- 🔒 Validación
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.mascotas
+        WHERE id_mascota = @id_mascota
+          AND id_usuario = @id_usuario
+          AND activo = 1
+    )
+BEGIN
+SELECT
+    0 AS success,
+    'Mascota no encontrada o no pertenece al usuario' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    -- 🛠 UPDATE dinámico
+UPDATE dbo.mascotas
+SET
+    nombre = ISNULL(@nombre, nombre),
+    especie = ISNULL(@especie, especie),
+    raza = ISNULL(@raza, raza),
+    tamanio = ISNULL(@tamanio, tamanio),
+    fecha_nacimiento = ISNULL(@fecha_nacimiento, fecha_nacimiento),
+    sexo = ISNULL(@sexo, sexo),
+    tipo_pelaje = ISNULL(@tipo_pelaje, tipo_pelaje),
+    alergias_general = ISNULL(@alergias_general, alergias_general),
+    comportamiento = ISNULL(@comportamiento, comportamiento),
+    observaciones = ISNULL(@observaciones, observaciones)
+WHERE id_mascota = @id_mascota;
+
+-- 📦 Respuesta
+SELECT *
+FROM dbo.mascotas
+WHERE id_mascota = @id_mascota
+    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+END;
+GO
+
+
+
+
+--obligatorio lo de la tabla consulta_clinica, las otras 3 trablas pueden o no estar con datos
+go--endpoint
+CREATE OR ALTER PROCEDURE dbo.sp_insert_consulta_clinica_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE
+@id_usuario INT = JSON_VALUE(@json, '$.id_usuario'),
+            @id_mascota INT = JSON_VALUE(@json, '$.id_mascota'),
+            @motivo NVARCHAR(500) = JSON_VALUE(@json, '$.motivo_consulta'),
+            @anamnesis NVARCHAR(MAX) = JSON_VALUE(@json, '$.anamnesis'),
+            @examen NVARCHAR(MAX) = JSON_VALUE(@json, '$.examen_general'),
+            @diagnostico NVARCHAR(MAX) = JSON_VALUE(@json, '$.diagnostico'),
+            @tratamiento_general NVARCHAR(MAX) = JSON_VALUE(@json, '$.tratamiento'),
+            @observaciones NVARCHAR(MAX) = JSON_VALUE(@json, '$.observaciones');
+
+        DECLARE @id_historia INT;
+
+        -- 🔒 VALIDACIÓN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.mascotas
+            WHERE id_mascota = @id_mascota
+              AND id_usuario = @id_usuario
+              AND activo = 1
+        )
+BEGIN
+ROLLBACK;
+SELECT
+    0 AS success,
+    'La mascota no pertenece al usuario' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+        -- 🏥 HISTORIA CLÍNICA
+SELECT @id_historia = id_historia_clinica
+FROM dbo.historias_clinicas
+WHERE id_mascota = @id_mascota;
+
+IF @id_historia IS NULL
+BEGIN
+INSERT INTO dbo.historias_clinicas
+(id_mascota, observaciones_generales)
+VALUES (@id_mascota, 'Inicio de historia clínica');
+
+SET @id_historia = SCOPE_IDENTITY();
+END
+
+        -- 🩺 CONSULTA
+INSERT INTO dbo.consultas_clinicas
+(
+    id_historia_clinica,
+    motivo_consulta,
+    anamnesis,
+    examen_general,
+    diagnostico,
+    tratamiento,
+    observaciones
+)
+VALUES
+    (
+        @id_historia,
+        @motivo,
+        @anamnesis,
+        @examen,
+        @diagnostico,
+        @tratamiento_general,
+        @observaciones
+    );
+
+DECLARE @id_consulta INT = SCOPE_IDENTITY();
+
+        -- 💊 TRATAMIENTOS (por nombre)
+        IF EXISTS (SELECT 1 FROM OPENJSON(@json, '$.tratamientos'))
+BEGIN
+            DECLARE @tmp_tratamientos TABLE
+            (
+                nombre_medicamento NVARCHAR(150),
+                dosis NVARCHAR(100),
+                frecuencia NVARCHAR(100),
+                duracion_dias INT,
+                indicaciones NVARCHAR(1000)
+            );
+
+INSERT INTO @tmp_tratamientos
+SELECT
+    JSON_VALUE(value, '$.nombre_medicamento'),
+    JSON_VALUE(value, '$.dosis'),
+    JSON_VALUE(value, '$.frecuencia'),
+    TRY_CAST(JSON_VALUE(value, '$.duracion_dias') AS INT),
+    JSON_VALUE(value, '$.indicaciones')
+FROM OPENJSON(@json, '$.tratamientos');
+
+-- 🧠 Crear medicamentos si no existen
+INSERT INTO dbo.medicamentos (nombre)
+SELECT DISTINCT t.nombre_medicamento
+FROM @tmp_tratamientos t
+WHERE t.nombre_medicamento IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1
+    FROM dbo.medicamentos m
+    WHERE UPPER(LTRIM(RTRIM(m.nombre))) = UPPER(LTRIM(RTRIM(t.nombre_medicamento)))
+);
+
+-- 💊 Insertar tratamientos
+INSERT INTO dbo.tratamientos
+(id_consulta, id_medicamento, dosis, frecuencia, duracion_dias, indicaciones)
+SELECT
+    @id_consulta,
+    m.id_medicamento,
+    t.dosis,
+    t.frecuencia,
+    t.duracion_dias,
+    t.indicaciones
+FROM @tmp_tratamientos t
+         JOIN dbo.medicamentos m
+              ON UPPER(LTRIM(RTRIM(m.nombre))) = UPPER(LTRIM(RTRIM(t.nombre_medicamento)))
+WHERE t.nombre_medicamento IS NOT NULL;
+END
+
+        -- 🧪 ESTUDIOS
+        IF EXISTS (SELECT 1 FROM OPENJSON(@json, '$.estudios'))
+BEGIN
+INSERT INTO dbo.estudios_clinicos
+(id_consulta, tipo_estudio, resultado, observaciones)
+SELECT
+    @id_consulta,
+    JSON_VALUE(value, '$.tipo_estudio'),
+    JSON_VALUE(value, '$.resultado'),
+    JSON_VALUE(value, '$.observaciones')
+FROM OPENJSON(@json, '$.estudios')
+WHERE JSON_VALUE(value, '$.tipo_estudio') IS NOT NULL;
+END
+
+        -- 📎 ARCHIVOS
+        IF EXISTS (SELECT 1 FROM OPENJSON(@json, '$.archivos'))
+BEGIN
+INSERT INTO dbo.archivos_clinicos
+(id_consulta, url_archivo, tipo_archivo, descripcion)
+SELECT
+    @id_consulta,
+    JSON_VALUE(value, '$.url_archivo'),
+    JSON_VALUE(value, '$.tipo_archivo'),
+    JSON_VALUE(value, '$.descripcion')
+FROM OPENJSON(@json, '$.archivos')
+WHERE JSON_VALUE(value, '$.url_archivo') IS NOT NULL;
+END
+
+COMMIT;
+
+SELECT
+    @id_consulta AS id_consulta,
+    'OK' AS status
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+            ROLLBACK;
+
+        THROW;
+END CATCH
+END;
+GO
+/*====Ejemplo de uso
+
+DECLARE @json NVARCHAR(MAX) = '
+{
+  "id_usuario": 1,
+  "id_mascota": 1,
+  "motivo_consulta": "Infeccion leve",
+  "anamnesis": "Decaimiento y falta de apetito",
+  "examen_general": "Temperatura elevada",
+  "diagnostico": "Infeccion bacteriana",
+  "tratamiento": "Antibiotico",
+  "observaciones": "Control en 5 dias",
+
+  "tratamientos": [
+    {
+      "nombre_medicamento": "Amoxicilina",
+      "dosis": "1 comprimido",
+      "frecuencia": "Cada 12hs",
+      "duracion_dias": 7,
+      "indicaciones": "Despues de comer"
+    }
+  ],
+
+  "estudios": [],
+  "archivos": []
+}';
+
+EXEC dbo.sp_insert_consulta_clinica_json @json;
+
+SELECT
+    c.id_consulta,
+    c.fecha,
+    c.motivo_consulta,
+    c.diagnostico,
+
+    t.id_tratamiento,
+    m.nombre AS medicamento,
+    t.dosis,
+    t.frecuencia,
+
+    e.tipo_estudio,
+    e.resultado,
+
+    a.url_archivo,
+    a.tipo_archivo
+
+FROM dbo.consultas_clinicas c
+
+LEFT JOIN dbo.tratamientos t
+    ON t.id_consulta = c.id_consulta
+
+LEFT JOIN dbo.medicamentos m
+    ON m.id_medicamento = t.id_medicamento
+
+LEFT JOIN dbo.estudios_clinicos e
+    ON e.id_consulta = c.id_consulta
+
+LEFT JOIN dbo.archivos_clinicos a
+    ON a.id_consulta = c.id_consulta
+
+ORDER BY c.id_consulta DESC;
+*/
+
+go
+--para el selector del formulario
+CREATE OR ALTER PROCEDURE dbo.sp_get_medicamentos
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+SELECT
+    id_medicamento,
+    nombre
+FROM dbo.medicamentos
+ORDER BY nombre
+    FOR JSON PATH;
+END;
+GO
+
+--DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1,  "nombre_vacuna": "Sextuple",  "fecha_aplicacion": "2025-03-15",  "proxima_dosis": "2026-03-15",  "observaciones": "Sin reacción post-vacunal"}';
+--EXEC dbo.sp_insert_vacunacion_json @json;
+CREATE OR ALTER PROCEDURE dbo.sp_insert_vacunacion_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE
+@id_usuario INT = JSON_VALUE(@json, '$.id_usuario'),
+            @id_mascota INT = JSON_VALUE(@json, '$.id_mascota'),
+            @nombre_vacuna NVARCHAR(150) = JSON_VALUE(@json, '$.nombre_vacuna'),
+            @fecha_aplicacion DATE = JSON_VALUE(@json, '$.fecha_aplicacion'),
+            @proxima_dosis DATE = JSON_VALUE(@json, '$.proxima_dosis'),
+            @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.observaciones');
+
+        DECLARE @id_vacuna INT;
+
+        -- 🔒 VALIDACIÓN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.mascotas
+            WHERE id_mascota = @id_mascota
+              AND id_usuario = @id_usuario
+              AND activo = 1
+        )
+BEGIN
+            THROW 50001, 'La mascota no pertenece al usuario', 1;
+END
+
+        -- 🧠 NORMALIZAR NOMBRE
+        SET @nombre_vacuna = LTRIM(RTRIM(@nombre_vacuna));
+
+        -- 💉 BUSCAR VACUNA
+SELECT @id_vacuna = id_vacuna
+FROM dbo.vacunas
+WHERE UPPER(LTRIM(RTRIM(nombre))) = UPPER(@nombre_vacuna);
+
+-- ➕ CREAR SI NO EXISTE
+IF @id_vacuna IS NULL
+BEGIN
+INSERT INTO dbo.vacunas (nombre)
+VALUES (@nombre_vacuna);
+
+SET @id_vacuna = SCOPE_IDENTITY();
+END
+
+        -- 💉 INSERTAR VACUNACIÓN
+INSERT INTO dbo.vacunas_mascota
+(
+    id_mascota,
+    id_vacuna,
+    fecha_aplicacion,
+    proxima_dosis,
+    observaciones
+)
+VALUES
+    (
+        @id_mascota,
+        @id_vacuna,
+        @fecha_aplicacion,
+        @proxima_dosis,
+        @observaciones
+    );
+
+COMMIT;
+
+SELECT
+    'OK' AS status,
+    @id_vacuna AS id_vacuna
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+            ROLLBACK;
+
+        THROW;
+END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_get_vacunas
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+SELECT
+    id_vacuna,
+    nombre
+FROM dbo.vacunas
+ORDER BY nombre
+    FOR JSON PATH;
+END;
+GO
+
+
+--DECLARE @json NVARCHAR(MAX) = '{ "id_usuario": 1,  "id_mascota": 1,  "nombre": "Milbemax",  "tipo": "INTERNO"  "fecha_aplicacion": "2025-03-15",  "proxima_dosis": "2025-09-15",  "observaciones": "Dosis 2 comp."}';
+--EXEC dbo.sp_insert_desparasitacion_json @json;
+CREATE OR ALTER PROCEDURE dbo.sp_insert_desparasitacion_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE
+@id_usuario INT = JSON_VALUE(@json, '$.id_usuario'),
+            @id_mascota INT = JSON_VALUE(@json, '$.id_mascota'),
+            @nombre NVARCHAR(150) = JSON_VALUE(@json, '$.nombre'),
+            @tipo NVARCHAR(50) = JSON_VALUE(@json, '$.tipo'),
+            @fecha_aplicacion DATE = JSON_VALUE(@json, '$.fecha_aplicacion'),
+            @proxima_dosis DATE = JSON_VALUE(@json, '$.proxima_dosis'),
+            @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.observaciones');
+
+        DECLARE @id_desparasitacion INT;
+
+        -- 🔒 VALIDACIÓN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.mascotas
+            WHERE id_mascota = @id_mascota
+              AND id_usuario = @id_usuario
+              AND activo = 1
+        )
+BEGIN
+            THROW 50001, 'La mascota no pertenece al usuario', 1;
+END
+
+        -- 🧠 NORMALIZAR
+        SET @nombre = LTRIM(RTRIM(@nombre));
+
+        -- 🔍 BUSCAR EXISTENTE
+SELECT @id_desparasitacion = id_desparasitacion
+FROM dbo.desparasitaciones
+WHERE UPPER(LTRIM(RTRIM(nombre))) = UPPER(@nombre);
+
+-- ➕ CREAR SI NO EXISTE
+IF @id_desparasitacion IS NULL
+BEGIN
+INSERT INTO dbo.desparasitaciones (nombre, tipo)
+VALUES (@nombre, @tipo);
+
+SET @id_desparasitacion = SCOPE_IDENTITY();
+END
+
+        -- 💉 INSERTAR REGISTRO
+INSERT INTO dbo.desparasitaciones_mascota
+(
+    id_mascota,
+    id_desparasitacion,
+    fecha_aplicacion,
+    proxima_dosis,
+    tipo,
+    observaciones
+)
+VALUES
+    (
+        @id_mascota,
+        @id_desparasitacion,
+        @fecha_aplicacion,
+        @proxima_dosis,
+        @tipo,
+        @observaciones
+    );
+
+COMMIT;
+
+SELECT
+    'OK' AS status,
+    @id_desparasitacion AS id_desparasitacion
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+            ROLLBACK;
+
+        THROW;
+END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_get_desparasitaciones
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+SELECT
+    id_desparasitacion,
+    nombre,
+    tipo
+FROM dbo.desparasitaciones
+ORDER BY nombre
+    FOR JSON PATH;
+END;
+GO
+
+--DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1,  "fecha": "2025-04-01",  "peso": 28.5,  "observaciones": "Peso estable"}';
+--EXEC dbo.sp_insert_peso_json @json;
+CREATE OR ALTER PROCEDURE dbo.sp_insert_peso_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE
+@id_usuario INT = JSON_VALUE(@json, '$.id_usuario'),
+            @id_mascota INT = JSON_VALUE(@json, '$.id_mascota'),
+            @fecha DATE = ISNULL(JSON_VALUE(@json, '$.fecha'), GETDATE()),
+            @peso DECIMAL(5,2) = TRY_CAST(JSON_VALUE(@json, '$.peso') AS DECIMAL(5,2)),
+            @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.observaciones');
+
+        -- 🔒 VALIDACIÓN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.mascotas
+            WHERE id_mascota = @id_mascota
+              AND id_usuario = @id_usuario
+              AND activo = 1
+        )
+BEGIN
+            THROW 50001, 'La mascota no pertenece al usuario', 1;
+END
+
+        -- ⚠ VALIDACIÓN PESO
+        IF @peso IS NULL OR @peso <= 0
+BEGIN
+            THROW 50002, 'Peso inválido', 1;
+END
+
+        -- 💉 INSERT
+INSERT INTO dbo.peso_mascota
+(
+    id_mascota,
+    fecha,
+    peso,
+    observaciones
+)
+VALUES
+    (
+        @id_mascota,
+        @fecha,
+        @peso,
+        @observaciones
+    );
+
+COMMIT;
+
+SELECT
+    'OK' AS status
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+            ROLLBACK;
+
+        THROW;
+END CATCH
+END;
+GO
+
+go
+--DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1,  "nombre": "Gastroenteritis aguda",  "estado": "CURADA",  "fecha_diagnostico": "2024-11-04",  "observaciones": "Resolución en 5 días con tratamiento"}';
+--EXEC dbo.sp_insert_enfermedad_json @json;
+go
+CREATE OR ALTER PROCEDURE dbo.sp_insert_enfermedad_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE
+@id_usuario INT = JSON_VALUE(@json, '$.id_usuario'),
+            @id_mascota INT = JSON_VALUE(@json, '$.id_mascota'),
+            @nombre NVARCHAR(150) = JSON_VALUE(@json, '$.nombre'),
+            @estado NVARCHAR(20) = JSON_VALUE(@json, '$.estado'),
+            @fecha_diagnostico DATE = JSON_VALUE(@json, '$.fecha_diagnostico'),
+            @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.observaciones');
+
+        DECLARE @id_enfermedad INT;
+
+        -- 🔒 VALIDACIÓN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.mascotas
+            WHERE id_mascota = @id_mascota
+              AND id_usuario = @id_usuario
+              AND activo = 1
+        )
+BEGIN
+            THROW 50001, 'La mascota no pertenece al usuario', 1;
+END
+
+        -- 🧠 NORMALIZAR NOMBRE
+        SET @nombre = LTRIM(RTRIM(@nombre));
+
+        -- 🔍 BUSCAR ENFERMEDAD
+SELECT @id_enfermedad = id_enfermedad
+FROM dbo.enfermedades
+WHERE UPPER(LTRIM(RTRIM(nombre))) = UPPER(@nombre);
+
+-- ➕ CREAR SI NO EXISTE
+IF @id_enfermedad IS NULL
+BEGIN
+INSERT INTO dbo.enfermedades (nombre)
+VALUES (@nombre);
+
+SET @id_enfermedad = SCOPE_IDENTITY();
+END
+
+        -- 🧠 NORMALIZAR ESTADO
+        SET @estado = UPPER(LTRIM(RTRIM(@estado)));
+
+        IF @estado IN ('CURADA', 'CURADO')
+            SET @estado = 'CURADA';
+
+        IF @estado IN ('ACTIVA')
+            SET @estado = 'ACTIVA';
+
+        IF @estado IN ('CRONICA', 'CRÓNICA')
+            SET @estado = 'CRONICA';
+
+        -- VALIDACIÓN FINAL
+        IF @estado NOT IN ('ACTIVA', 'CURADA', 'CRONICA')
+BEGIN
+            THROW 50002, 'Estado inválido', 1;
+END
+
+        -- 💉 INSERTAR REGISTRO
+INSERT INTO dbo.enfermedades_mascota
+(
+    id_mascota,
+    id_enfermedad,
+    fecha_diagnostico,
+    estado,
+    observaciones
+)
+VALUES
+    (
+        @id_mascota,
+        @id_enfermedad,
+        @fecha_diagnostico,
+        @estado,
+        @observaciones
+    );
+
+COMMIT;
+
+SELECT
+    'OK' AS status,
+    @id_enfermedad AS id_enfermedad
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+            ROLLBACK;
+
+        THROW;
+END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_get_enfermedades
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+SELECT
+    id_enfermedad,
+    nombre
+FROM dbo.enfermedades
+ORDER BY nombre
+    FOR JSON PATH;
+END;
+GO
+
+--DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1,  "nombre": "fractura",  "descripcion": "Alergia estacional",  "severidad": "leve",  "observaciones": "Primavera principalmente"}';
+--EXEC dbo.sp_insert_alergia_json @json;
+CREATE OR ALTER PROCEDURE dbo.sp_insert_alergia_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE
+@id_usuario INT = JSON_VALUE(@json, '$.id_usuario'),
+            @id_mascota INT = JSON_VALUE(@json, '$.id_mascota'),
+            @nombre NVARCHAR(150) = JSON_VALUE(@json, '$.nombre'),
+            @descripcion NVARCHAR(500) = JSON_VALUE(@json, '$.descripcion'),
+            @severidad NVARCHAR(20) = JSON_VALUE(@json, '$.severidad'),
+            @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.observaciones');
+
+        DECLARE @id_alergia INT;
+
+        -- 🔒 VALIDACIÓN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.mascotas
+            WHERE id_mascota = @id_mascota
+              AND id_usuario = @id_usuario
+              AND activo = 1
+        )
+BEGIN
+            THROW 50001, 'La mascota no pertenece al usuario', 1;
+END
+
+        -- 🧠 NORMALIZAR NOMBRE
+        SET @nombre = LTRIM(RTRIM(@nombre));
+
+        -- 🔍 BUSCAR ALERGIA
+SELECT @id_alergia = id_alergia
+FROM dbo.alergias
+WHERE UPPER(LTRIM(RTRIM(nombre))) = UPPER(@nombre);
+
+-- ➕ CREAR SI NO EXISTE
+IF @id_alergia IS NULL
+BEGIN
+INSERT INTO dbo.alergias (nombre)
+VALUES (@nombre);
+
+SET @id_alergia = SCOPE_IDENTITY();
+END
+
+        -- 🧠 NORMALIZAR SEVERIDAD
+        SET @severidad = UPPER(LTRIM(RTRIM(@severidad)));
+
+        IF @severidad IN ('LEVE')
+            SET @severidad = 'LEVE';
+
+        IF @severidad IN ('MEDIA', 'MODERADA')
+            SET @severidad = 'MEDIA';
+
+        IF @severidad IN ('ALTA', 'GRAVE')
+            SET @severidad = 'ALTA';
+
+        -- VALIDACIÓN FINAL
+        IF @severidad NOT IN ('LEVE', 'MEDIA', 'ALTA')
+BEGIN
+            THROW 50002, 'Severidad inválida', 1;
+END
+
+        -- 💉 INSERTAR RELACIÓN
+INSERT INTO dbo.alergias_mascota
+(
+    id_mascota,
+    id_alergia,
+    severidad,
+    observaciones
+)
+VALUES
+    (
+        @id_mascota,
+        @id_alergia,
+        @severidad,
+        @observaciones
+    );
+
+COMMIT;
+
+SELECT
+    'OK' AS status,
+    @id_alergia AS id_alergia
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+            ROLLBACK;
+
+        THROW;
+END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE  dbo.sp_get_alergias
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+SELECT
+    id_alergia,
+    nombre
+FROM dbo.alergias
+ORDER BY nombre
+    FOR JSON PATH;
+END;
+GO
+
+
+
+
+
+
+
