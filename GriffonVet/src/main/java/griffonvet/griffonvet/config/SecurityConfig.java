@@ -45,7 +45,7 @@ public class SecurityConfig {
 
                         // endpoints públicos (SIN context-path)
                         .requestMatchers(
-                                "/ristorino/login"
+                                "/griffonVet/login"
 
 
 

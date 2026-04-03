@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    BASE DE DATOS: VETERINARIA / PELUQUERIA CANINA
    MOTOR: SQL SERVER
    OBJETIVO:
@@ -648,63 +648,38 @@ END;
 GO
 go--endpointt
 CREATE OR ALTER PROCEDURE dbo.sp_login_usuario_json
-    @json NVARCHAR(MAX)
+    @json         NVARCHAR(MAX),
+    @login_valido INT OUTPUT,
+    @rol          NVARCHAR(50) OUTPUT,
+    @email_out    NVARCHAR(150) OUTPUT
     AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@email NVARCHAR(150),
-        @password NVARCHAR(255),
-        @password_hash VARBINARY(64);
+    DECLARE @email             NVARCHAR(150);
+    DECLARE @password          NVARCHAR(255);
+    DECLARE @password_hash_bin VARBINARY(64);
 
-    -- 🔹 Parsear JSON
 SELECT
-    @email = JSON_VALUE(@json, '$.email'),
+    @email    = JSON_VALUE(@json, '$.email'),
     @password = JSON_VALUE(@json, '$.password');
 
--- 🔐 Hashear password
-SET @password_hash = HASHBYTES('SHA2_256', @password);
+SET @password_hash_bin = HASHBYTES('SHA2_256', @password);
 
-    -- 🔹 Validación
-    IF NOT EXISTS (
-        SELECT 1
-        FROM dbo.usuarios
-        WHERE email = @email
-          AND password_hash = @password_hash
-          AND activo = 1
-    )
+SELECT @rol = rol, @email_out = email
+FROM dbo.usuarios
+WHERE email         = @email
+  AND password_hash = @password_hash_bin
+  AND activo        = 1;
+
+IF @rol IS NOT NULL
+        SET @login_valido = 1;
+ELSE
 BEGIN
-SELECT
-    0 AS success,
-    'Credenciales incorrectas' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
+        SET @login_valido = 0;
+        SET @rol          = NULL;
+        SET @email_out    = NULL;
 END
-
-    -- ✅ Login correcto
-SELECT
-    1 AS success,
-    'Login correcto' AS mensaje,
-    JSON_QUERY(
-            (
-                SELECT
-                    u.id_usuario,
-                    u.nombre,
-                    u.apellido,
-                    (u.nombre + ' ' + u.apellido) AS nombre_completo,
-                    u.email,
-                    u.telefono,
-                    u.rol
-                FROM dbo.usuarios u
-                WHERE u.email = @email
-                  AND u.password_hash = @password_hash
-                  AND u.activo = 1
-                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-        )
-        ) AS usuario
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END;
 GO

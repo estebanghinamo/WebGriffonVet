@@ -5,30 +5,21 @@ import com.google.gson.JsonParser;
 import griffonvet.griffonvet.components.SimpleJdbcCallFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import griffonvet.griffonvet.service.CloudinaryService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.sql.Types;
-import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -37,10 +28,75 @@ public class GriffonVetRepository {
     private SimpleJdbcCallFactory jdbcCallFactory;
     @Autowired
     private CloudinaryService cloudinaryService;
-    // @Autowired
-    //private GeminiService geminiService;
+
+
     @Value("${security.jwt.secret}")
     private String jwtSecret;
+
+    public String login(String json) {
+        SqlParameterSource params = new MapSqlParameterSource()
+                .addValue("json", json);
+        try {
+            Map<String, Object> out = jdbcCallFactory.executeWithOutputs("sp_login_usuario_json", "dbo", params);
+
+            Integer loginValido = (Integer) out.get("login_valido");
+
+            if (loginValido == null || loginValido == 0) {
+                throw new RuntimeException("Credenciales incorrectas");
+            }
+
+            String email = (String) out.get("email_out");
+            String rol   = (String) out.get("rol");
+            String token = generarToken(email);
+
+            return new ObjectMapper().writeValueAsString(Map.of(
+                    "token", token,
+                    "rol",   rol
+            ));
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new RuntimeException("Error al loguearse: " + e.getMessage());
+        }
+    }
+
+    private String generarToken(String correo) {
+        Date ahora = new Date();
+        Date expiracion = new Date(ahora.getTime() + 1000 * 60 * 60 * 2);
+
+        return Jwts.builder()
+                .setSubject(correo)
+                .setIssuedAt(ahora)
+                .setExpiration(expiracion)
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String getClientes() throws JsonProcessingException {
+
+        List<Map<String, Object>> resultado = jdbcCallFactory.executeList(
+                "sp_get_clientes_con_mascotas_json",
+                "dbo",
+                new MapSqlParameterSource()
+        );
+
+        return new ObjectMapper().writeValueAsString(resultado);
+    }
+
+    public String getMascota(String json) throws JsonProcessingException {
+        SqlParameterSource params = new MapSqlParameterSource()
+                .addValue("json", json);
+
+        List<Map<String, Object>> resultado = jdbcCallFactory.executeList(
+                "sp_get_informacioncompleta_mascota",
+                "dbo",
+                params
+        );
+
+        return new ObjectMapper().writeValueAsString(resultado);
+    }
 
     public String registrarUsuario(String json) {
 
