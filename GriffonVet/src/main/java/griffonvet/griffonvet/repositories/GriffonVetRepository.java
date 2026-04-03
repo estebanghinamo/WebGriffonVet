@@ -33,7 +33,7 @@ public class GriffonVetRepository {
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
-    public String login(String json) {
+    public Map<String,String> login(String json) {
         SqlParameterSource params = new MapSqlParameterSource()
                 .addValue("json", json);
         try {
@@ -42,17 +42,17 @@ public class GriffonVetRepository {
             Integer loginValido = (Integer) out.get("login_valido");
 
             if (loginValido == null || loginValido == 0) {
-                throw new RuntimeException("Credenciales incorrectas");
+                return null;
             }
 
             String email = (String) out.get("email_out");
             String rol   = (String) out.get("rol");
             String token = generarToken(email);
 
-            return new ObjectMapper().writeValueAsString(Map.of(
+            return  Map.of(
                     "token", token,
                     "rol",   rol
-            ));
+            );
 
         } catch (RuntimeException e) {
             throw e;
@@ -76,27 +76,30 @@ public class GriffonVetRepository {
 
     public String getClientes() throws JsonProcessingException {
 
-        List<Map<String, Object>> resultado = jdbcCallFactory.executeList(
+        Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
                 "sp_get_clientes_con_mascotas_json",
                 "dbo",
                 new MapSqlParameterSource()
         );
 
-        return new ObjectMapper().writeValueAsString(resultado);
+        List<Map<String, Object>> rs =
+                (List<Map<String, Object>>) result.get("#result-set-1");
+
+        if (rs == null || rs.isEmpty()) {
+            return "{\"productos\": []}";
+        }
+
+        // El SP ya devuelve JSON → lo sacamos directo
+        Object value = rs.get(0).values().iterator().next();
+
+        if (value == null) {
+            return "{\"productos\": []}";
+        }
+
+        return value.toString();
     }
 
-    public String getMascota(String json) throws JsonProcessingException {
-        SqlParameterSource params = new MapSqlParameterSource()
-                .addValue("json", json);
 
-        List<Map<String, Object>> resultado = jdbcCallFactory.executeList(
-                "sp_get_informacioncompleta_mascota",
-                "dbo",
-                params
-        );
-
-        return new ObjectMapper().writeValueAsString(resultado);
-    }
 
     public String registrarUsuario(String json) {
 
@@ -241,6 +244,40 @@ public class GriffonVetRepository {
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
                     "sp_get_mascotas_por_usuario_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Sin datos\"}";
+            }
+
+            // 🔹 Si el SP ya devuelve JSON
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String getMascota(String json) throws JsonProcessingException {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_informacioncompleta_mascota",
                     "dbo",
                     params
             );

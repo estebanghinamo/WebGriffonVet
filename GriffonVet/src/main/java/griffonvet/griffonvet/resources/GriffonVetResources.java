@@ -25,9 +25,9 @@ public class GriffonVetResources {
     public ResponseEntity<Map<String, String>> logueo(@RequestBody String json) {
         try {
             System.out.println("json: "+json);
-            String token = griffonVetRepository.login(json);
-            if (token != null) {
-                return ResponseEntity.ok(Map.of("token", token));
+            Map<String,String> result = griffonVetRepository.login(json);
+            if (result != null) {
+                return ResponseEntity.ok(result);
             } else {
                 return ResponseEntity.status(401).body(Map.of("error", "error en email o contraseña"));
             }
@@ -48,10 +48,7 @@ public class GriffonVetResources {
     @GetMapping("/obtenerClientes")
     public ResponseEntity<String> getClientes() throws JsonProcessingException {
         String json = griffonVetRepository.getClientes();
-        System.out.println(json);
-        return ResponseEntity.ok()
-                .header("Content-Type", "application/json")
-                .body(json);
+        return ResponseEntity.ok(json);
     }
 
     @GetMapping("/obtenerProductos")
@@ -84,13 +81,18 @@ public class GriffonVetResources {
     }
 
     @PostMapping("/obtenerMascota")
+    public ResponseEntity<String> getMasctota(@RequestBody String json) throws JsonProcessingException {
+        String resp = griffonVetRepository.getMascota(json);
+
+        return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/obtenerMascotas")
     public ResponseEntity<String> obtenerMascotasPorUsuario(@RequestBody String json) {
 
         String response = griffonVetRepository.obtenerMascotasPorUsuario(json);
 
-        return ResponseEntity.ok()
-                .header("Content-Type", "application/json")
-                .body(response);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/insertarMascotas")

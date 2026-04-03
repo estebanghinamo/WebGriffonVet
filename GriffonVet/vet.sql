@@ -1132,30 +1132,17 @@ BEGIN
 
 SELECT
     u.id_usuario,
-    u.nombre,
-    u.apellido,
     (u.nombre + ' ' + u.apellido) AS nombre_completo,
     u.email,
     u.telefono,
     u.activo,
-    u.fecha_alta,
 
     JSON_QUERY(
             (
                 SELECT
                     m.id_mascota,
                     m.nombre AS nombre_mascota,
-                    m.especie,
-                    m.raza,
-                    m.tamanio,
-                    m.fecha_nacimiento,
-                    m.sexo,
-                    m.tipo_pelaje,
-                    m.alergias_general,
-                    m.comportamiento,
-                    m.observaciones,
-                    m.activo,
-                    m.fecha_registro
+                    m.especie
                 FROM dbo.mascotas m
                 WHERE m.id_usuario = u.id_usuario
                   AND m.activo = 1
@@ -1171,6 +1158,7 @@ ORDER BY u.apellido, u.nombre
     FOR JSON PATH, ROOT('clientes');
 END;
 GO
+
 
 --DECLARE @json NVARCHAR(MAX) = '{ "id_usuario": 1,"id_mascota": 1}';
 --EXEC dbo.sp_get_informacioncompleta_mascota @json;
