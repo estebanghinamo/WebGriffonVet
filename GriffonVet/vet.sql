@@ -692,47 +692,47 @@ VALUES
 
 /*
 ---------------INSERTS DE PRUEBAS----------------------
-													*/
+
 
 INSERT INTO dbo.usuarios (nombre, apellido, email, telefono, password_hash, rol)
 VALUES
-    ('admin', 'admin', 'admin@gmail.com', '3571551111', 'admin123', 'ADMIN'),
-    ('Maria', 'Gomez', 'maria.gomez@gmail.com', '3571552222', 'hash123', 'CLIENTE'),
-    ('Lucas', 'Fernandez', 'lucas.fernandez@gmail.com', '3571553333', 'hash123', 'CLIENTE'),
-    ('Sofia', 'Lopez', 'sofia.lopez@gmail.com', '3571554444', 'hash123', 'CLIENTE'),
-    ('Martin', 'Diaz', 'martin.diaz@gmail.com', '3571555555', 'hash123', 'CLIENTE');
+('juana', 'peres', 'juana@gmail.com', '3571551111', 'admin123', 'ADMIN'),
+('Maria', 'Gomez', 'maria.gomez@gmail.com', '3571552222', 'hash123', 'CLIENTE'),
+('Lucas', 'Fernandez', 'lucas.fernandez@gmail.com', '3571553333', 'hash123', 'CLIENTE'),
+('Sofia', 'Lopez', 'sofia.lopez@gmail.com', '3571554444', 'hash123', 'CLIENTE'),
+('Martin', 'Diaz', 'martin.diaz@gmail.com', '3571555555', 'hash123', 'CLIENTE');
 
 
 INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
 VALUES
-    (1, 'Rocky', 'Perro', 'Labrador', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'DOCIL'),
-    (1, 'Milo', 'Gato', 'Siames', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
-    (1, 'Luna', 'Perro', 'Caniche', 'CHICO', '2020-05-10', 'HEMBRA', 'LARGO', 'JUGUETONA');
+(1, 'Rocky', 'Perro', 'Labrador', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'DOCIL'),
+(1, 'Milo', 'Gato', 'Siames', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
+(1, 'Luna', 'Perro', 'Caniche', 'CHICO', '2020-05-10', 'HEMBRA', 'LARGO', 'JUGUETONA');
 
 INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
 VALUES
-    (2, 'Toby', 'Perro', 'Bulldog', 'MEDIANO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
-    (2, 'Nina', 'Gato', 'Persa', 'CHICO', '2020-05-10',  'HEMBRA', 'LARGO', 'DOCIL');
+(2, 'Toby', 'Perro', 'Bulldog', 'MEDIANO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
+(2, 'Nina', 'Gato', 'Persa', 'CHICO', '2020-05-10',  'HEMBRA', 'LARGO', 'DOCIL');
 
 INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
 VALUES
-    (3, 'Thor', 'Perro', 'Ovejero Aleman', 'GRANDE', '2020-05-10', 'MACHO', 'LARGO', 'GUARDIAN'),
-    (3, 'Simba', 'Gato', 'Comun', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'INQUIETO'),
-    (3, 'Kira', 'Perro', 'Beagle', 'MEDIANO', '2020-05-10',  'HEMBRA', 'CORTO', 'ACTIVO');
+(3, 'Thor', 'Perro', 'Ovejero Aleman', 'GRANDE', '2020-05-10', 'MACHO', 'LARGO', 'GUARDIAN'),
+(3, 'Simba', 'Gato', 'Comun', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'INQUIETO'),
+(3, 'Kira', 'Perro', 'Beagle', 'MEDIANO', '2020-05-10',  'HEMBRA', 'CORTO', 'ACTIVO');
 
 INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
 VALUES
-    (4, 'Lola', 'Perro', 'Golden Retriever', 'GRANDE', '2020-05-10', 'HEMBRA', 'LARGO', 'DOCIL'),
-    (4, 'Felix', 'Gato', 'Comun', 'CHICO', '2020-05-10', 'MACHO', 'CORTO', 'TRANQUILO');
+(4, 'Lola', 'Perro', 'Golden Retriever', 'GRANDE', '2020-05-10', 'HEMBRA', 'LARGO', 'DOCIL'),
+(4, 'Felix', 'Gato', 'Comun', 'CHICO', '2020-05-10', 'MACHO', 'CORTO', 'TRANQUILO');
 
 
 INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento,  sexo, tipo_pelaje, comportamiento)
 VALUES
-    (5, 'Bruno', 'Perro', 'Rottweiler', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'GUARDIAN'),
-    (5, 'Mia', 'Gato', 'Siames', 'CHICO', '2020-05-10', 'HEMBRA', 'CORTO', 'JUGUETONA'),
-    (5, 'Zeus', 'Perro', 'Pitbull', 'MEDIANO', '2020-05-10',  'MACHO', 'CORTO', 'ENERGICO');
+(5, 'Bruno', 'Perro', 'Rottweiler', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'GUARDIAN'),
+(5, 'Mia', 'Gato', 'Siames', 'CHICO', '2020-05-10', 'HEMBRA', 'CORTO', 'JUGUETONA'),
+(5, 'Zeus', 'Perro', 'Pitbull', 'MEDIANO', '2020-05-10',  'MACHO', 'CORTO', 'ENERGICO');
 
-
+*/
 
 
 
@@ -883,7 +883,171 @@ END
 END;
 GO
 
+go
+CREATE OR ALTER PROCEDURE dbo.sp_insert_cliente_mascota_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
 
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE
+            -- 👤 CLIENTE
+@nombre NVARCHAR(100) = JSON_VALUE(@json, '$.cliente.nombre'),
+            @apellido NVARCHAR(100) = JSON_VALUE(@json, '$.cliente.apellido'),
+            @email NVARCHAR(150) = JSON_VALUE(@json, '$.cliente.email'),
+            @telefono NVARCHAR(50) = JSON_VALUE(@json, '$.cliente.telefono'),
+            @password NVARCHAR(255) = JSON_VALUE(@json, '$.cliente.password'),
+            @password_hash VARBINARY(64),
+
+            -- 🐶 MASCOTA
+            @nombre_mascota NVARCHAR(100) = JSON_VALUE(@json, '$.mascota.nombre'),
+            @especie NVARCHAR(50) = JSON_VALUE(@json, '$.mascota.especie'),
+            @raza NVARCHAR(100) = JSON_VALUE(@json, '$.mascota.raza'),
+            @tamanio NVARCHAR(50) = JSON_VALUE(@json, '$.mascota.tamanio'),
+            @fecha_nacimiento DATE = JSON_VALUE(@json, '$.mascota.fecha_nacimiento'),
+            @sexo NVARCHAR(20) = JSON_VALUE(@json, '$.mascota.sexo'),
+            @tipo_pelaje NVARCHAR(50) = JSON_VALUE(@json, '$.mascota.tipo_pelaje'),
+            @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.mascota.observaciones');
+
+        DECLARE @id_usuario INT;
+
+        -- 🔒 Validaciones
+        IF @email IS NULL OR @password IS NULL
+BEGIN
+SELECT 0 AS success, 'Email y contraseña son obligatorios' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+ROLLBACK;
+RETURN;
+END
+
+        IF @nombre IS NULL OR @nombre = ''
+BEGIN
+SELECT 0 AS success, 'El nombre del cliente es obligatorio' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+ROLLBACK;
+RETURN;
+END
+
+        -- 🔒 Email duplicado
+        IF EXISTS (SELECT 1 FROM dbo.usuarios WHERE email = @email)
+BEGIN
+SELECT 0 AS success, 'El email ya está registrado' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+ROLLBACK;
+RETURN;
+END
+
+        -- 🔐 HASH PASSWORD (igual que tu SP)
+        SET @password_hash = HASHBYTES('SHA2_256', @password);
+
+        -- 👤 INSERT CLIENTE
+INSERT INTO dbo.usuarios
+(
+    nombre,
+    apellido,
+    email,
+    telefono,
+    password_hash,
+    rol,
+    activo,
+    fecha_alta
+)
+VALUES
+    (
+        @nombre,
+        @apellido,
+        @email,
+        @telefono,
+        @password_hash,
+        'CLIENTE',
+        1,
+        GETDATE()
+    );
+
+SET @id_usuario = SCOPE_IDENTITY();
+
+        -- 🐶 INSERT MASCOTA (solo si viene info)
+        IF @nombre_mascota IS NOT NULL AND @nombre_mascota <> ''
+BEGIN
+INSERT INTO dbo.mascotas
+(
+    id_usuario,
+    nombre,
+    especie,
+    raza,
+    tamanio,
+    fecha_nacimiento,
+    sexo,
+    tipo_pelaje,
+    observaciones,
+    activo,
+    fecha_registro
+)
+VALUES
+    (
+        @id_usuario,
+        @nombre_mascota,
+        @especie,
+        @raza,
+        @tamanio,
+        @fecha_nacimiento,
+        @sexo,
+        @tipo_pelaje,
+        @observaciones,
+        1,
+        GETDATE()
+    );
+END
+
+COMMIT;
+
+-- ✅ RESPUESTA
+SELECT
+    1 AS success,
+    'Cliente y mascota creados correctamente' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    u.id_usuario,
+                    u.nombre,
+                    u.apellido,
+                    (u.nombre + ' ' + u.apellido) AS nombre_completo,
+                    u.email,
+                    u.telefono,
+                    u.rol,
+                    (
+                        SELECT
+                            m.id_mascota,
+                            m.nombre,
+                            m.especie,
+                            m.raza
+                        FROM dbo.mascotas m
+                        WHERE m.id_usuario = u.id_usuario
+                FOR JSON PATH
+        ) AS mascotas
+                    FROM dbo.usuarios u
+                    WHERE u.id_usuario = @id_usuario
+                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+                )
+            ) AS data
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+END CATCH
+END;
+GO
 /*============================================================================0
 
   procedimientos de obtener, editar e insertar productos
@@ -1387,7 +1551,8 @@ SELECT
                 SELECT
                     m.id_mascota,
                     m.nombre AS nombre_mascota,
-                    m.especie
+                    m.especie,
+                    m.sexo
                 FROM dbo.mascotas m
                 WHERE m.id_usuario = u.id_usuario
                   AND m.activo = 1
@@ -2184,7 +2349,7 @@ GO
 --DECLARE @json NVARCHAR(MAX) = '{ "id_usuario": 1,  "id_mascota": 1,  "id_desparasitacion": 1,  "fecha_aplicacion": "2025-03-15",  "proxima_dosis": "2025-09-15",  "observaciones": "Dosis 2 comp."}';
 --EXEC dbo.sp_insert_desparasitacion_json @json;
 go
-CREATE OR ALTER PROCEDURE dbo.sp_insert_desparasitacion_json
+CREATE OR ALTER PROCEDURE dbo.sp_insert_desparasitacion_mascota_json
     (
     @json NVARCHAR(MAX)
     )
@@ -2305,7 +2470,7 @@ ORDER BY nombre
     FOR JSON PATH;
 END;
 GO
-CREATE OR ALTER PROCEDURE dbo.sp_insert_desparasitacion_catalogo_json
+CREATE OR ALTER PROCEDURE sp_insert_desparasitacion_catalogo_json
     (
     @json NVARCHAR(MAX)
     )
@@ -2623,7 +2788,7 @@ ORDER BY nombre
     FOR JSON PATH;
 END;
 GO
-CREATE OR ALTER PROCEDURE dbo.sp_insert_enfermedad_nombre_json
+CREATE OR ALTER PROCEDURE dbo.sp_insert_enfermedad_catalogo_json
     (
     @json NVARCHAR(MAX)
     )
@@ -2703,7 +2868,6 @@ SELECT
 
 END;
 GO
-
 
 /*============================================================================0
   procedimientos de administrar alergia
@@ -2847,7 +3011,7 @@ ORDER BY nombre
 END;
 GO
 go
-CREATE OR ALTER PROCEDURE dbo.sp_insert_alergia_nombre_json
+CREATE OR ALTER PROCEDURE dbo.sp_insert_alergia_catalogo_json
     (
     @json NVARCHAR(MAX)
     )
@@ -3117,3 +3281,5 @@ WHERE s.id_servicio = @id_servicio
     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 END;
 GO
+
+

@@ -45,6 +45,16 @@ public class GriffonVetResources {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/insertarClienteMascotaAdmin")
+    public ResponseEntity<String> insertarClienteMascotaAdmin(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarClienteMascotaAdmin(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
     @GetMapping("/obtenerClientes")
     public ResponseEntity<String> getClientes() throws JsonProcessingException {
         String json = griffonVetRepository.getClientes();

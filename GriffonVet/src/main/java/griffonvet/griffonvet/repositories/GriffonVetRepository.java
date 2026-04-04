@@ -126,6 +126,40 @@ public class GriffonVetRepository {
         }
     }
 
+    public String insertarClienteMascotaAdmin(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_cliente_mascota_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al registrar cliente\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
     public String obtenerProductos() {
 
         MapSqlParameterSource params = new MapSqlParameterSource();
@@ -646,7 +680,7 @@ public class GriffonVetRepository {
                     .addValue("json", json);
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                    "sp_insert_desparasitacion_json",
+                    "sp_insert_desparasitacion_mascota_json",
                     "dbo",
                     params
             );
@@ -847,7 +881,7 @@ public class GriffonVetRepository {
                     .addValue("json", json);
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                    "sp_insert_enfermedad_nombre_json",
+                    "sp_insert_enfermedad_catalogo_json",
                     "dbo",
                     params
             );
@@ -948,7 +982,7 @@ public class GriffonVetRepository {
                     .addValue("json", json);
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                    "sp_insert_alergia_nombre_json",
+                    "sp_insert_alergia_catalogo_json",
                     "dbo",
                     params
             );
