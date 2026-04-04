@@ -692,8 +692,8 @@ VALUES
 
 /*
 ---------------INSERTS DE PRUEBAS----------------------
-
-
+													
+													
 INSERT INTO dbo.usuarios (nombre, apellido, email, telefono, password_hash, rol)
 VALUES
 ('juana', 'peres', 'juana@gmail.com', '3571551111', 'admin123', 'ADMIN'),
@@ -705,9 +705,9 @@ VALUES
 
 INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
 VALUES
-(1, 'Rocky', 'Perro', 'Labrador', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'DOCIL'),
-(1, 'Milo', 'Gato', 'Siames', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
-(1, 'Luna', 'Perro', 'Caniche', 'CHICO', '2020-05-10', 'HEMBRA', 'LARGO', 'JUGUETONA');
+(2, 'Rocky', 'Perro', 'Labrador', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'DOCIL'),
+(2, 'Milo', 'Gato', 'Siames', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
+(2, 'Luna', 'Perro', 'Caniche', 'CHICO', '2020-05-10', 'HEMBRA', 'LARGO', 'JUGUETONA');
 
 INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
 VALUES
@@ -786,8 +786,8 @@ END
 
     -- 🔹 Validar duplicado
     IF EXISTS (
-        SELECT 1
-        FROM dbo.usuarios
+        SELECT 1 
+        FROM dbo.usuarios 
         WHERE email = @email
     )
 BEGIN
@@ -895,7 +895,7 @@ BEGIN
 BEGIN TRY
 BEGIN TRAN;
 
-        DECLARE
+        DECLARE 
             -- 👤 CLIENTE
 @nombre NVARCHAR(100) = JSON_VALUE(@json, '$.cliente.nombre'),
             @apellido NVARCHAR(100) = JSON_VALUE(@json, '$.cliente.apellido'),
@@ -1187,8 +1187,8 @@ RETURN;
 END
 
     IF NOT EXISTS (
-        SELECT 1
-        FROM dbo.productos
+        SELECT 1 
+        FROM dbo.productos 
         WHERE id_producto = @id_producto
     )
 BEGIN
@@ -1468,7 +1468,7 @@ GO
 
 
 ================================================================================*/
-
+ 
 go
 GO--endpoint
 CREATE OR ALTER PROCEDURE dbo.sp_get_clientes_con_mascotas_json_filtrado
@@ -2002,7 +2002,7 @@ DECLARE @json NVARCHAR(MAX) = '
 
 EXEC dbo.sp_insert_consulta_clinica_json @json;
 
-SELECT
+SELECT 
     c.id_consulta,
     c.fecha,
     c.motivo_consulta,
@@ -2021,16 +2021,16 @@ SELECT
 
 FROM dbo.consultas_clinicas c
 
-LEFT JOIN dbo.tratamientos t
+LEFT JOIN dbo.tratamientos t 
     ON t.id_consulta = c.id_consulta
 
-LEFT JOIN dbo.medicamentos m
+LEFT JOIN dbo.medicamentos m 
     ON m.id_medicamento = t.id_medicamento
 
-LEFT JOIN dbo.estudios_clinicos e
+LEFT JOIN dbo.estudios_clinicos e 
     ON e.id_consulta = c.id_consulta
 
-LEFT JOIN dbo.archivos_clinicos a
+LEFT JOIN dbo.archivos_clinicos a 
     ON a.id_consulta = c.id_consulta
 
 ORDER BY c.id_consulta DESC;
@@ -2041,7 +2041,7 @@ go
   procedimientos de administrar medicamentos
 ================================================================================*/
 go
---para el selector del formulario
+--para el selector del formulario 
 CREATE OR ALTER PROCEDURE dbo.sp_get_medicamentos
     AS
 BEGIN
@@ -2505,7 +2505,7 @@ END
     SET @tipo_normalizado = UPPER(@tipo);
 
     -- 🔒 Validación tipo (opcional pero PRO)
-    IF @tipo_normalizado IS NOT NULL
+    IF @tipo_normalizado IS NOT NULL 
        AND @tipo_normalizado NOT IN ('INTERNO', 'EXTERNO')
 BEGIN
 SELECT
