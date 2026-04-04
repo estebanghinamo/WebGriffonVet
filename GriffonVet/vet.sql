@@ -2305,7 +2305,7 @@ ORDER BY nombre
     FOR JSON PATH;
 END;
 GO
-CREATE OR ALTER PROCEDURE dbo.sp_insert_desparasitacion_json
+CREATE OR ALTER PROCEDURE dbo.sp_insert_desparasitacion_catalogo_json
     (
     @json NVARCHAR(MAX)
     )
@@ -2402,6 +2402,7 @@ SELECT
 
 END;
 GO
+
 
 --DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1,  "fecha": "2025-04-01",  "peso": 28.5,  "observaciones": "Peso estable"}';
 --EXEC dbo.sp_insert_peso_json @json;
@@ -2622,7 +2623,7 @@ ORDER BY nombre
     FOR JSON PATH;
 END;
 GO
-CREATE OR ALTER PROCEDURE dbo.sp_insert_enfermedad_json
+CREATE OR ALTER PROCEDURE dbo.sp_insert_enfermedad_nombre_json
     (
     @json NVARCHAR(MAX)
     )
@@ -2702,6 +2703,7 @@ SELECT
 
 END;
 GO
+
 
 /*============================================================================0
   procedimientos de administrar alergia
@@ -2845,7 +2847,7 @@ ORDER BY nombre
 END;
 GO
 go
-CREATE OR ALTER PROCEDURE dbo.sp_insert_alergia_json
+CREATE OR ALTER PROCEDURE dbo.sp_insert_alergia_nombre_json
     (
     @json NVARCHAR(MAX)
     )

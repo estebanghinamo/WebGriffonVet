@@ -99,8 +99,6 @@ public class GriffonVetRepository {
         return value.toString();
     }
 
-
-
     public String registrarUsuario(String json) {
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -715,7 +713,7 @@ public class GriffonVetRepository {
                     .addValue("json", json);
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                    "sp_insert_desparasitacion_json",
+                    "sp_insert_desparasitacion_catalogo_json",
                     "dbo",
                     params
             );
@@ -849,7 +847,7 @@ public class GriffonVetRepository {
                     .addValue("json", json);
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                    "sp_insert_enfermedad_json",
+                    "sp_insert_enfermedad_nombre_json",
                     "dbo",
                     params
             );
@@ -950,7 +948,7 @@ public class GriffonVetRepository {
                     .addValue("json", json);
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                    "sp_insert_alergia_json",
+                    "sp_insert_alergia_nombre_json",
                     "dbo",
                     params
             );
