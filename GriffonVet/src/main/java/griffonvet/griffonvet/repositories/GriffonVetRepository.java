@@ -236,6 +236,40 @@ public class GriffonVetRepository {
         }
     }
 
+    public String eliminarProducto(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_delete_producto_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al eliminar producto\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
     public String obtenerMascotasPorUsuario(String json) {
 
         try {
@@ -439,6 +473,676 @@ public class GriffonVetRepository {
         }
     }
 
+    public String obtenerMedicamentos() {
 
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
 
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_medicamentos",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"medicamentos\": []}";
+            }
+
+            // 🔹 El SP devuelve JSON
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"medicamentos\": []}";
+
+        } catch (Exception e) {
+            return "{\"ok\": false, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarMedicamento(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_medicamento",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al procesar medicamento\"}";
+            }
+
+            // 🔹 El SP ya devuelve JSON completo
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarVacunacion(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_vacunacion_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al registrar vacunación\"}";
+            }
+
+            // 🔹 El SP ya devuelve JSON completo
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String obtenerVacunas() {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_vacunas",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"vacunas\": []}";
+            }
+
+            // 🔹 El SP devuelve JSON directo
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"vacunas\": []}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarVacuna(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_vacuna_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al procesar vacuna\"}";
+            }
+
+            // 🔹 El SP ya devuelve JSON completo
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarDesparasitacion(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_desparasitacion_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al registrar desparasitación\"}";
+            }
+
+            // 🔹 El SP ya devuelve JSON completo
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String obtenerDesparasitaciones() {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_desparasitaciones",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"desparasitaciones\": []}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"desparasitaciones\": []}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarDesparasitacionCatalogo(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_desparasitacion_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al procesar desparasitante\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarPeso(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_peso_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al registrar peso\"}";
+            }
+
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            // 🔥 IMPORTANTE: acá caen los THROW del SQL
+            return "{\"success\": 0, \"mensaje\": \"" + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarEnfermedad(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_enfermedad_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al registrar enfermedad\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String obtenerEnfermedades() {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_enfermedades",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"enfermedades\": []}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"enfermedades\": []}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarEnfermedadCatalogo(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_enfermedad_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al procesar enfermedad\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarAlergia(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_alergia_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al registrar alergia\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String obtenerAlergias() {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_alergias",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"alergias\": []}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"alergias\": []}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarAlergiaCatalogo(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_alergia_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al procesar alergia\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String obtenerServicios() {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_servicios_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"servicios\": []}";
+            }
+
+            // 🔹 JSON directo del SP (ya viene perfecto)
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"servicios\": []}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarServicio(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_servicio_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al insertar servicio\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String actualizarServicio(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_update_servicio_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al actualizar servicio\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String eliminarServicio(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_delete_servicio_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al eliminar servicio\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String obtenerServicioPorMascota(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_servicio_por_mascota",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Servicio no encontrado\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
 }

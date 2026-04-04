@@ -80,6 +80,17 @@ public class GriffonVetResources {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/EliminarProducto")
+    public ResponseEntity<String> eliminarProducto(@RequestBody String json) {
+
+        String response = griffonVetRepository.eliminarProducto(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
     @PostMapping("/obtenerMascota")
     public ResponseEntity<String> getMasctota(@RequestBody String json) throws JsonProcessingException {
         String resp = griffonVetRepository.getMascota(json);
@@ -133,4 +144,205 @@ public class GriffonVetResources {
                 .body(response);
     }
 
+    @GetMapping("/ObtenerMedicamentos")
+    public ResponseEntity<String> obtenerMedicamentos() {
+
+        String response = griffonVetRepository.obtenerMedicamentos();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/InsertarMedicamento")
+    public ResponseEntity<String> insertarMedicamento(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarMedicamento(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @PostMapping("/InsertarVacunacion")
+    public ResponseEntity<String> insertarVacunacion(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarVacunacion(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @GetMapping("/ObtenerVacunas")
+    public ResponseEntity<String> obtenerVacunas() {
+
+        String response = griffonVetRepository.obtenerVacunas();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/InsertarVacuna")
+    public ResponseEntity<String> insertarVacuna(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarVacuna(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @PostMapping("/InsertarDesparasitacion")
+    public ResponseEntity<String> insertarDesparasitacion(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarDesparasitacion(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @GetMapping("/ObtenerDesparasitaciones")
+    public ResponseEntity<String> obtenerDesparasitaciones() {
+
+        String response = griffonVetRepository.obtenerDesparasitaciones();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/InsertarTipoDesparasitacion")
+    public ResponseEntity<String> insertarDesparasitacionCatalogo(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarDesparasitacionCatalogo(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @PostMapping("/InsertarPeso")
+    public ResponseEntity<String> insertarPeso(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarPeso(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @PostMapping("/InsertarEnfermedad")
+    public ResponseEntity<String> insertarEnfermedad(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarEnfermedad(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @GetMapping("/ObtenerEnfermedades")
+    public ResponseEntity<String> obtenerEnfermedades() {
+
+        String response = griffonVetRepository.obtenerEnfermedades();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/InsertarEnfermedadCatalogo")
+    public ResponseEntity<String> insertarEnfermedadCatalogo(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarEnfermedadCatalogo(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @PostMapping("/InsertarAlergia")
+    public ResponseEntity<String> insertarAlergia(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarAlergia(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @GetMapping("/ObtenerAlergias")
+    public ResponseEntity<String> obtenerAlergias() {
+
+        String response = griffonVetRepository.obtenerAlergias();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/InsertarAlergiaCatalogo")
+    public ResponseEntity<String> insertarAlergiaCatalogo(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarAlergiaCatalogo(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @GetMapping("/ObtenerServicios")
+    public ResponseEntity<String> obtenerServicios() {
+
+        String response = griffonVetRepository.obtenerServicios();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/InsertarServicio")
+    public ResponseEntity<String> insertarServicio(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarServicio(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @PutMapping("/ActualizarServicio")
+    public ResponseEntity<String> actualizarServicio(@RequestBody String json) {
+
+        String response = griffonVetRepository.actualizarServicio(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @DeleteMapping("/EliminarServicio")
+    public ResponseEntity<String> eliminarServicio(@RequestBody String json) {
+
+        String response = griffonVetRepository.eliminarServicio(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @PostMapping("/ObtenerServicioPorMascota")
+    public ResponseEntity<String> obtenerServicioPorMascota(@RequestBody String json) {
+
+        String response = griffonVetRepository.obtenerServicioPorMascota(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
 }
