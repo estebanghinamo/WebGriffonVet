@@ -117,10 +117,10 @@ public class GriffonVetRepository {
             return "{\"ok\": false, \"mensaje\": \"Error al registrar usuario\"}";
         }
 
-        // Convertimos el resultado a JSON string
+
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(rs.get(0));
+            Object value = rs.get(0).values().iterator().next();
+            return value.toString();
         } catch (Exception e) {
             return "{\"ok\": false, \"mensaje\": \"Error al parsear respuesta\"}";
         }
