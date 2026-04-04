@@ -108,7 +108,7 @@ public class GriffonVetResources {
         return ResponseEntity.ok(resp);
     }
 
-    @PostMapping("/obtenerMascotas")
+    @PostMapping("/usuario/obtenerMascotas")
     public ResponseEntity<String> obtenerMascotasPorUsuario(@RequestBody String json) {
 
         String response = griffonVetRepository.obtenerMascotasPorUsuario(json);
