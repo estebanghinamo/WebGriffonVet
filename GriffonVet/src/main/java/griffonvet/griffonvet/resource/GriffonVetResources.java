@@ -1,4 +1,4 @@
-package griffonvet.griffonvet.resources;
+package griffonvet.griffonvet.resource;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;

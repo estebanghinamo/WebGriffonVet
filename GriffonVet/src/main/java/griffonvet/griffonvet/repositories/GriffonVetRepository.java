@@ -101,6 +101,8 @@ public class GriffonVetRepository {
 
     public String registrarUsuario(String json) {
 
+        //chequear que solo el gmail sea hotmail o gmail
+        //mostrar errores en el front
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("json", json);
 
