@@ -2,6 +2,7 @@ package griffonvet.griffonvet.resources;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import griffonvet.griffonvet.config.JsonUtils;
 import griffonvet.griffonvet.repositories.GriffonVetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -20,6 +21,12 @@ public class GriffonVetResources {
 
     @Autowired
     private GriffonVetRepository griffonVetRepository;
+    @Autowired
+    private final JsonUtils jsonUtils;
+
+    public GriffonVetResources(JsonUtils jsonUtils) {
+        this.jsonUtils = jsonUtils;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> logueo(@RequestBody String json) {
@@ -55,6 +62,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
+
     @GetMapping("/obtenerClientes")
     public ResponseEntity<String> getClientes() throws JsonProcessingException {
         String json = griffonVetRepository.getClientes();
@@ -108,18 +116,18 @@ public class GriffonVetResources {
         return ResponseEntity.ok(resp);
     }
 
-    @PostMapping("/usuario/obtenerMascotas")
-    public ResponseEntity<String> obtenerMascotasPorUsuario(@RequestBody String json) {
-
-        String response = griffonVetRepository.obtenerMascotasPorUsuario(json);
-
+    @GetMapping("/usuario/obtenerMascotas")
+    public ResponseEntity<String> obtenerMascotasPorUsuario() {
+        String response = griffonVetRepository.obtenerMascotasPorUsuario(
+                jsonUtils.jsonSoloConIdUsuario());
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/insertarMascotas")
     public ResponseEntity<String> insertarMascota(@RequestBody String json) {
 
-        String response = griffonVetRepository.insertarMascota(json);
+        String response = griffonVetRepository.insertarMascota(
+                jsonUtils.resolverIdUsuario(json));
 
         return ResponseEntity.ok(response);
     }
@@ -135,7 +143,8 @@ public class GriffonVetResources {
     @PutMapping("/actualizarMascotas")
     public ResponseEntity<String> editarInfoGeneralMascota(@RequestBody String json) {
 
-        String response = griffonVetRepository.editarInfoGeneralMascota(json);
+        String response = griffonVetRepository.editarInfoGeneralMascota(
+                jsonUtils.resolverIdUsuario(json));
 
         return ResponseEntity
                 .ok()

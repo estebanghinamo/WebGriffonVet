@@ -850,11 +850,11 @@ CREATE OR ALTER PROCEDURE dbo.sp_login_usuario_json
     @json         NVARCHAR(MAX),
     @login_valido INT OUTPUT,
     @rol          NVARCHAR(50) OUTPUT,
-    @email_out    NVARCHAR(150) OUTPUT
+    @email_out    NVARCHAR(150) OUTPUT,
+    @id_usuario   INT OUTPUT
     AS
 BEGIN
     SET NOCOUNT ON;
-
     DECLARE @email             NVARCHAR(150);
     DECLARE @password          NVARCHAR(255);
     DECLARE @password_hash_bin VARBINARY(64);
@@ -865,7 +865,7 @@ SELECT
 
 SET @password_hash_bin = HASHBYTES('SHA2_256', @password);
 
-SELECT @rol = rol, @email_out = email
+SELECT @rol = rol, @email_out = email, @id_usuario = id_usuario
 FROM dbo.usuarios
 WHERE email         = @email
   AND password_hash = @password_hash_bin
@@ -878,8 +878,8 @@ BEGIN
         SET @login_valido = 0;
         SET @rol          = NULL;
         SET @email_out    = NULL;
+        SET @id_usuario   = NULL;
 END
-
 END;
 GO
 

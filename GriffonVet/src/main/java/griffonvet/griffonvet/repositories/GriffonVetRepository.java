@@ -33,41 +33,41 @@ public class GriffonVetRepository {
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
-    public Map<String,String> login(String json) {
+    public Map<String, String> login(String json) {
         SqlParameterSource params = new MapSqlParameterSource()
                 .addValue("json", json);
         try {
             Map<String, Object> out = jdbcCallFactory.executeWithOutputs("sp_login_usuario_json", "dbo", params);
 
             Integer loginValido = (Integer) out.get("login_valido");
-
             if (loginValido == null || loginValido == 0) {
                 return null;
             }
 
-            String email = (String) out.get("email_out");
-            String rol   = (String) out.get("rol");
-            String token = generarToken(email);
+            String  email     = (String)  out.get("email_out");
+            String  rol       = (String)  out.get("rol");
+            Integer idUsuario = (Integer) out.get("id_usuario");
 
-            return  Map.of(
-                    "token", token,
-                    "rol",   rol
+            String token = generarToken(email, idUsuario, rol);
+
+            return Map.of(
+                    "token", token
             );
 
-        } catch (RuntimeException e) {
-            throw e;
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new RuntimeException("Error al loguearse: " + e.getMessage());
         }
     }
 
-    private String generarToken(String correo) {
-        Date ahora = new Date();
+    private String generarToken(String correo, int idUsuario, String rol) {
+        Date ahora     = new Date();
         Date expiracion = new Date(ahora.getTime() + 1000 * 60 * 60 * 2);
 
         return Jwts.builder()
                 .setSubject(correo)
+                .claim("id_usuario", idUsuario)
+                .claim("rol", rol)
                 .setIssuedAt(ahora)
                 .setExpiration(expiracion)
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)), SignatureAlgorithm.HS256)
