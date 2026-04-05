@@ -1343,7 +1343,13 @@ SELECT
                     m.nombre,
                     UPPER(m.especie) AS especie,
                     m.raza,
-                    m.fecha_nacimiento
+                    m.sexo,
+                    m.tamanio,
+                    m.fecha_nacimiento,
+                    m.comportamiento,
+                    m.observaciones,
+                    m.tipo_pelaje
+
                 FROM dbo.mascotas m
                 WHERE m.id_usuario = @id_usuario
                   AND m.activo = 1
