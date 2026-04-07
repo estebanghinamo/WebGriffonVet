@@ -743,7 +743,7 @@ where id_usuario=1
 GO
 
 
-
+select * from dbo.estudios_clinicos
 /*============================================================================0
 
   procedimientos de registrar y login
@@ -751,7 +751,7 @@ GO
 
 ================================================================================*/
 
-go--endpoint
+    go--endpoint
 CREATE OR ALTER PROCEDURE dbo.sp_registrar_usuario
     @json NVARCHAR(MAX)
     AS
@@ -1564,33 +1564,40 @@ CREATE OR ALTER PROCEDURE dbo.sp_get_clientes_con_mascotas_json
 BEGIN
     SET NOCOUNT ON;
 
-SELECT
-    u.id_usuario,
-    (u.nombre + ' ' + u.apellido) AS nombre_completo,
-    u.email,
-    u.telefono,
-    u.activo,
+    DECLARE @result NVARCHAR(MAX);
 
-    JSON_QUERY(
-            (
-                SELECT
-                    m.id_mascota,
-                    m.nombre AS nombre_mascota,
-                    m.especie,
-                    m.sexo
-                FROM dbo.mascotas m
-                WHERE m.id_usuario = u.id_usuario
-                  AND m.activo = 1
-                ORDER BY m.nombre
-                FOR JSON PATH
-        )
-        ) AS mascotas
+    SET @result = (
+        SELECT
+            u.id_usuario,
+            (u.nombre + ' ' + u.apellido) AS nombre_completo,
+            u.email,
+            u.telefono,
+            u.activo,
 
-FROM dbo.usuarios u
-WHERE u.rol = 'CLIENTE'
-  AND u.activo = 1
-ORDER BY u.apellido, u.nombre
-    FOR JSON PATH, ROOT('clientes');
+            JSON_QUERY(
+                (
+                    SELECT
+                        m.id_mascota,
+                        m.nombre AS nombre_mascota,
+                        m.especie,
+                        m.sexo
+                    FROM dbo.mascotas m
+                    WHERE m.id_usuario = u.id_usuario
+                      AND m.activo = 1
+                    ORDER BY m.nombre
+                    FOR JSON PATH
+                )
+            ) AS mascotas
+
+        FROM dbo.usuarios u
+        WHERE u.rol = 'CLIENTE'
+          AND u.activo = 1
+        ORDER BY u.apellido, u.nombre
+        FOR JSON PATH, ROOT('clientes')
+    );
+
+    -- 🔥 CLAVE
+SELECT @result AS json;
 END;
 GO
 
@@ -1611,7 +1618,7 @@ BEGIN
 @id_usuario INT = JSON_VALUE(@json, '$.id_usuario'),
         @id_mascota INT = JSON_VALUE(@json, '$.id_mascota');
 
-    -- Validación básica
+    -- 🔒 Validación
     IF NOT EXISTS (
         SELECT 1
         FROM dbo.mascotas
@@ -1619,121 +1626,132 @@ BEGIN
           AND id_usuario = @id_usuario
     )
 BEGIN
-        RAISERROR('La mascota no pertenece al usuario', 16, 1);
-        RETURN;
+SELECT
+    0 AS success,
+    'La mascota no pertenece al usuario' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
 END
 
-SELECT
-    m.id_mascota,
-    m.nombre,
-    m.especie,
-    m.raza,
-    m.tamanio,
-    m.fecha_nacimiento,
-    m.sexo,
-    m.tipo_pelaje,
-    m.comportamiento,
-    m.observaciones,
-    m.castrado,
+    DECLARE @result NVARCHAR(MAX);
 
-    -- 🐾 PESO HISTÓRICO
-    ISNULL(JSON_QUERY((
-        SELECT fecha, peso, observaciones
-        FROM dbo.peso_mascota p
-        WHERE p.id_mascota = m.id_mascota
-        ORDER BY fecha DESC
-        FOR JSON PATH
-               )), '[]') AS pesos,
-
-    -- 🤧 ALERGIAS
-    ISNULL(JSON_QUERY((
-        SELECT a.nombre, am.severidad, am.observaciones
-        FROM dbo.alergias_mascota am
-                 JOIN dbo.alergias a ON a.id_alergia = am.id_alergia
-        WHERE am.id_mascota = m.id_mascota
-        FOR JSON PATH
-               )), '[]') AS alergias,
-
-    -- 💉 VACUNAS
-    ISNULL(JSON_QUERY((
-        SELECT v.nombre, vm.fecha_aplicacion, vm.proxima_dosis
-        FROM dbo.vacunas_mascota vm
-                 JOIN dbo.vacunas v ON v.id_vacuna = vm.id_vacuna
-        WHERE vm.id_mascota = m.id_mascota
-        FOR JSON PATH
-               )), '[]') AS vacunas,
-
-    -- 🦠 DESPARASITACIONES
-    ISNULL(JSON_QUERY((
-        SELECT d.nombre, dm.fecha_aplicacion, dm.proxima_dosis, dm.tipo
-        FROM dbo.desparasitaciones_mascota dm
-                 JOIN dbo.desparasitaciones d ON d.id_desparasitacion = dm.id_desparasitacion
-        WHERE dm.id_mascota = m.id_mascota
-        FOR JSON PATH
-               )), '[]') AS desparasitaciones,
-
-    -- 🧬 ENFERMEDADES
-    ISNULL(JSON_QUERY((
-        SELECT e.nombre, em.estado, em.fecha_diagnostico
-        FROM dbo.enfermedades_mascota em
-                 JOIN dbo.enfermedades e ON e.id_enfermedad = em.id_enfermedad
-        WHERE em.id_mascota = m.id_mascota
-        FOR JSON PATH
-               )), '[]') AS enfermedades,
-
-    -- 🏥 HISTORIA CLÍNICA
-    ISNULL(JSON_QUERY((
+    SET @result = (
         SELECT
-            hc.id_historia_clinica,
+            m.id_mascota,
+            m.nombre,
+            m.especie,
+            m.raza,
+            m.tamanio,
+            m.fecha_nacimiento,
+            m.sexo,
+            m.tipo_pelaje,
+            m.comportamiento,
+            m.observaciones,
+            m.castrado,
 
-            (
+            -- 🐾 PESOS
+            ISNULL(JSON_QUERY((
+                SELECT fecha, peso, observaciones
+                FROM dbo.peso_mascota p
+                WHERE p.id_mascota = m.id_mascota
+                ORDER BY fecha DESC
+                FOR JSON PATH
+            )), '[]') AS pesos,
+
+            -- 🤧 ALERGIAS
+            ISNULL(JSON_QUERY((
+                SELECT a.nombre, am.severidad, am.observaciones
+                FROM dbo.alergias_mascota am
+                JOIN dbo.alergias a ON a.id_alergia = am.id_alergia
+                WHERE am.id_mascota = m.id_mascota
+                FOR JSON PATH
+            )), '[]') AS alergias,
+
+            -- 💉 VACUNAS
+            ISNULL(JSON_QUERY((
+                SELECT v.nombre, vm.fecha_aplicacion, vm.proxima_dosis,vm.observaciones
+                FROM dbo.vacunas_mascota vm
+                JOIN dbo.vacunas v ON v.id_vacuna = vm.id_vacuna
+                WHERE vm.id_mascota = m.id_mascota
+                FOR JSON PATH
+            )), '[]') AS vacunas,
+
+            -- 🦠 DESPARASITACIONES
+            ISNULL(JSON_QUERY((
+                SELECT d.nombre, d.tipo, dm.fecha_aplicacion, dm.proxima_dosis,dm.observaciones
+                FROM dbo.desparasitaciones_mascota dm
+                JOIN dbo.desparasitaciones d ON d.id_desparasitacion = dm.id_desparasitacion
+                WHERE dm.id_mascota = m.id_mascota
+                FOR JSON PATH
+            )), '[]') AS desparasitaciones,
+
+            -- 🧬 ENFERMEDADES
+            ISNULL(JSON_QUERY((
+                SELECT e.nombre, em.estado, em.fecha_diagnostico,em.observaciones
+                FROM dbo.enfermedades_mascota em
+                JOIN dbo.enfermedades e ON e.id_enfermedad = em.id_enfermedad
+                WHERE em.id_mascota = m.id_mascota
+                FOR JSON PATH
+            )), '[]') AS enfermedades,
+
+            -- 🏥 HISTORIA CLÍNICA
+            ISNULL(JSON_QUERY((
                 SELECT
-                    c.id_consulta,
-                    c.fecha,
-                    c.motivo_consulta,
-                    c.diagnostico,
-                    c.tratamiento,
+                    hc.id_historia_clinica,
 
-                    -- 💊 TRATAMIENTOS
-                    JSON_QUERY((
-                        SELECT med.nombre, t.dosis, t.frecuencia, t.duracion_dias
-                        FROM dbo.tratamientos t
-                                 LEFT JOIN dbo.medicamentos med ON med.id_medicamento = t.id_medicamento
-                        WHERE t.id_consulta = c.id_consulta
+                    (
+                        SELECT
+                            c.id_consulta,
+                            c.fecha,
+                            c.motivo_consulta,
+                            c.diagnostico,
+                            c.tratamiento,
+
+                            -- 💊 TRATAMIENTOS
+                            JSON_QUERY((
+                                SELECT med.nombre, t.dosis, t.frecuencia, t.duracion_dias
+                                FROM dbo.tratamientos t
+                                LEFT JOIN dbo.medicamentos med
+                                    ON med.id_medicamento = t.id_medicamento
+                                WHERE t.id_consulta = c.id_consulta
+                                FOR JSON PATH
+                            )) AS tratamientos,
+
+                            -- 🧪 ESTUDIOS
+                            JSON_QUERY((
+                                SELECT tipo_estudio, resultado, fecha
+                                FROM dbo.estudios_clinicos e
+                                WHERE e.id_consulta = c.id_consulta
+                                FOR JSON PATH
+                            )) AS estudios,
+
+                            -- 📎 ARCHIVOS
+                            JSON_QUERY((
+                                SELECT url_archivo, tipo_archivo, descripcion
+                                FROM dbo.archivos_clinicos a
+                                WHERE a.id_consulta = c.id_consulta
+                                FOR JSON PATH
+                            )) AS archivos
+
+                        FROM dbo.consultas_clinicas c
+                        WHERE c.id_historia_clinica = hc.id_historia_clinica
+                        ORDER BY c.fecha DESC
                         FOR JSON PATH
-                        )) AS tratamientos,
+                    ) AS consultas
 
-                    -- 🧪 ESTUDIOS
-                    JSON_QUERY((
-                        SELECT tipo_estudio, resultado, fecha
-                        FROM dbo.estudios_clinicos e
-                        WHERE e.id_consulta = c.id_consulta
-                        FOR JSON PATH
-                        )) AS estudios,
+                FROM dbo.historias_clinicas hc
+                WHERE hc.id_mascota = m.id_mascota
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+            )), '{}') AS historia_clinica
 
-                    -- 📎 ARCHIVOS
-                    JSON_QUERY((
-                        SELECT url_archivo, tipo_archivo, descripcion
-                        FROM dbo.archivos_clinicos a
-                        WHERE a.id_consulta = c.id_consulta
-                        FOR JSON PATH
-                        )) AS archivos
+        FROM dbo.mascotas m
+        WHERE m.id_mascota = @id_mascota
+          AND m.id_usuario = @id_usuario
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+    );
 
-                FROM dbo.consultas_clinicas c
-                WHERE c.id_historia_clinica = hc.id_historia_clinica
-                ORDER BY c.fecha DESC
-        FOR JSON PATH
-               ) AS consultas
-
-            FROM dbo.historias_clinicas hc
-            WHERE hc.id_mascota = m.id_mascota
-            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-        )), '{}') AS historia_clinica
-
-FROM dbo.mascotas m
-WHERE m.id_mascota = @id_mascota
-  AND m.id_usuario = @id_usuario
-    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+    -- 🔥 DEVOLUCIÓN FINAL (CLAVE)
+SELECT @result AS json;
 END;
 GO
 
@@ -3042,23 +3060,17 @@ SELECT
 RETURN;
 END
 
-        -- 🧠 NORMALIZAR SEVERIDAD
+        -- 🧠 NORMALIZAR SEVERIDAD (SIN CAMBIAR VALORES)
         SET @severidad = UPPER(LTRIM(RTRIM(@severidad)));
 
-        IF @severidad IN ('MODERADA')
-            SET @severidad = 'MEDIA';
-
-        IF @severidad IN ('GRAVE')
-            SET @severidad = 'ALTA';
-
-        -- 🔒 VALIDACIÓN SEVERIDAD
-        IF @severidad NOT IN ('LEVE', 'MEDIA', 'ALTA')
+        -- 🔒 VALIDACIÓN SEVERIDAD (CONSISTENTE CON DB)
+        IF @severidad NOT IN ('LEVE', 'MODERADA', 'GRAVE')
 BEGIN
 ROLLBACK;
 
 SELECT
     0 AS success,
-    'Severidad inválida (LEVE, MEDIA, ALTA)' AS mensaje
+    'Severidad inválida (LEVE, MODERADA, GRAVE)' AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 RETURN;
@@ -3082,6 +3094,7 @@ VALUES
 
 COMMIT;
 
+-- ✅ RESPUESTA
 SELECT
     1 AS success,
     'Alergia registrada correctamente' AS mensaje,
@@ -3393,5 +3406,4 @@ WHERE s.id_servicio = @id_servicio
     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 END;
 GO
-
 

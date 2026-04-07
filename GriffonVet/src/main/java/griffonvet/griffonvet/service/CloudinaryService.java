@@ -16,17 +16,20 @@ public class CloudinaryService {
         this.cloudinary = cloudinary;
     }
 
-    public String subirImagen(MultipartFile file) {
+    public String subirArchivo(MultipartFile file) {
         try {
+
             Map uploadResult = cloudinary.uploader().upload(
                     file.getBytes(),
-                    ObjectUtils.emptyMap()
+                    ObjectUtils.asMap(
+                            "resource_type", "auto" // 🔥 CLAVE (permite PDF + imágenes)
+                    )
             );
 
             return uploadResult.get("secure_url").toString();
 
         } catch (Exception e) {
-            throw new RuntimeException("Error al subir imagen", e);
+            throw new RuntimeException("Error al subir archivo", e);
         }
     }
 }

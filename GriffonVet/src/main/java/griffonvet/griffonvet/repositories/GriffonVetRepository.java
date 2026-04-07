@@ -1,5 +1,6 @@
 package griffonvet.griffonvet.repositories;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import griffonvet.griffonvet.components.SimpleJdbcCallFactory;
@@ -90,13 +91,13 @@ public class GriffonVetRepository {
         }
 
         // El SP ya devuelve JSON → lo sacamos directo
-        Object value = rs.get(0).values().iterator().next();
+        String jsonResult = (String) rs.get(0).get("json");
 
-        if (value == null) {
-            return "{\"productos\": []}";
+        if (jsonResult == null) {
+            return "{\"clientes\": []}";
         }
 
-        return value.toString();
+        return jsonResult;
     }
 
     public String registrarUsuario(String json) {
@@ -196,7 +197,7 @@ public class GriffonVetRepository {
             JsonObject json = JsonParser.parseString(productoJson).getAsJsonObject();
 
             // 🔹 Subir imagen
-            String urlImagen = cloudinaryService.subirImagen(imagen);
+            String urlImagen = cloudinaryService.subirArchivo(imagen);
 
             // 🔹 Agregar URL al JSON
             json.addProperty("imagen_url", urlImagen);
@@ -235,7 +236,7 @@ public class GriffonVetRepository {
 
             // 🔹 Si viene imagen, la subimos
             if (imagen != null && !imagen.isEmpty()) {
-                String urlImagen = cloudinaryService.subirImagen(imagen);
+                String urlImagen = cloudinaryService.subirArchivo(imagen);
                 json.addProperty("imagen_url", urlImagen);
             }
 
@@ -359,10 +360,10 @@ public class GriffonVetRepository {
             }
 
             // 🔹 Si el SP ya devuelve JSON
-            Object value = rs.get(0).values().iterator().next();
+            String jsonResult = (String) rs.get(0).get("json");
 
-            if (value != null) {
-                return value.toString();
+            if (jsonResult != null) {
+                return jsonResult;
             }
 
             return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
@@ -473,11 +474,48 @@ public class GriffonVetRepository {
         }
     }
 
-    public String insertarConsultaClinica(String json) {
+    public String insertarConsultaClinica(String json, MultipartFile[] archivos) {
 
         try {
+            JsonObject consulta = JsonParser.parseString(json).getAsJsonObject();
+            JsonArray estudios = consulta.getAsJsonArray("estudios");
+
+            int fileIndex = 0;
+
+            if (estudios != null) {
+                for (int i = 0; i < estudios.size(); i++) {
+
+                    JsonObject estudio = estudios.get(i).getAsJsonObject();
+
+                    // 🔥 Si hay archivo disponible
+                    if (archivos != null && fileIndex < archivos.length) {
+
+                        MultipartFile file = archivos[fileIndex];
+
+                        if (file != null && !file.isEmpty()) {
+
+                            String url = cloudinaryService.subirArchivo(file);
+                            estudio.addProperty("resultado", url);
+
+                            fileIndex++; // 🔥 SIEMPRE avanza cuando usa archivo
+
+                        } else {
+                            estudio.addProperty("resultado", "");
+                        }
+
+                    } else {
+                        estudio.addProperty("resultado", "");
+                    }
+
+                    // 🔒 fallback (sin archivo)
+                    if (!estudio.has("resultado")) {
+                        estudio.addProperty("resultado", "");
+                    }
+                }
+            }
+
             MapSqlParameterSource params = new MapSqlParameterSource()
-                    .addValue("json", json);
+                    .addValue("json", consulta.toString());
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
                     "sp_insert_consulta_clinica_json",
@@ -488,22 +526,16 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
-                return "{\"ok\": false, \"mensaje\": \"Error al registrar consulta clínica\"}";
+                return "{\"ok\": false, \"mensaje\": \"Error al registrar consulta\"}";
             }
 
-            // 🔹 El SP ya devuelve JSON
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"ok\": false, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null ? value.toString() : "{\"ok\": false}";
 
         } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+            return "{\"ok\": false, \"mensaje\": \"" + e.getMessage() + "\"}";
         }
     }
 

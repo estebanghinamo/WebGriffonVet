@@ -64,9 +64,10 @@ public class GriffonVetResources {
     }
 
     @GetMapping("/obtenerClientes")
-    public ResponseEntity<String> getClientes() throws JsonProcessingException {
-        String json = griffonVetRepository.getClientes();
-        return ResponseEntity.ok(json);
+    public ResponseEntity<?> getClientes() throws JsonProcessingException {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(griffonVetRepository.getClientes());
     }
 
     @GetMapping("/obtenerProductos")
@@ -109,11 +110,12 @@ public class GriffonVetResources {
                 .body(response);
     }
 
-    @PostMapping("/obtenerMascota")
-    public ResponseEntity<String> getMasctota(@RequestBody String json) throws JsonProcessingException {
-        String resp = griffonVetRepository.getMascota(json);
 
-        return ResponseEntity.ok(resp);
+    @PostMapping("/obtenerMascota")
+    public ResponseEntity<?> getMascota(@RequestBody String json) throws JsonProcessingException {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(griffonVetRepository.getMascota(json));
     }
 
     @GetMapping("/usuario/obtenerMascotas")
@@ -152,13 +154,15 @@ public class GriffonVetResources {
                 .body(response);
     }
 
-    @PostMapping("/nuevaConsulta")
-    public ResponseEntity<String> insertarConsultaClinica(@RequestBody String json) {
+    @PostMapping(value = "/nuevaConsulta", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> insertarConsultaClinica(
+            @RequestParam("consulta") String json,
+            @RequestParam(value = "archivos", required = false) MultipartFile[] archivos
+    ) {
 
-        String response = griffonVetRepository.insertarConsultaClinica(json);
+        String response = griffonVetRepository.insertarConsultaClinica(json, archivos);
 
-        return ResponseEntity
-                .ok()
+        return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
