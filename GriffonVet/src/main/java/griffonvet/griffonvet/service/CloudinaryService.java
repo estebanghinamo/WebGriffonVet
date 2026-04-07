@@ -32,4 +32,5 @@ public class CloudinaryService {
             throw new RuntimeException("Error al subir archivo", e);
         }
     }
+
 }

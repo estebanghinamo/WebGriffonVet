@@ -36,7 +36,6 @@ IF OBJECT_ID('dbo.vacunas', 'U') IS NOT NULL DROP TABLE dbo.vacunas;
 IF OBJECT_ID('dbo.desparasitaciones', 'U') IS NOT NULL DROP TABLE dbo.desparasitaciones;
 IF OBJECT_ID('dbo.alergias', 'U') IS NOT NULL DROP TABLE dbo.alergias;
 
-
 IF OBJECT_ID('dbo.agenda_bloqueos', 'U') IS NOT NULL DROP TABLE dbo.agenda_bloqueos;
 IF OBJECT_ID('dbo.horarios_atencion', 'U') IS NOT NULL DROP TABLE dbo.horarios_atencion;
 IF OBJECT_ID('dbo.productos', 'U') IS NOT NULL DROP TABLE dbo.productos;
@@ -130,6 +129,7 @@ CREATE TABLE dbo.servicios_precios (
                                            CHECK (tamanio IN ('CHICO', 'MEDIANO', 'GRANDE'))
 );
 GO
+
 -- =========================================================
 -- TABLA: categorias
 -- categorias de productos
@@ -750,9 +750,6 @@ VALUES
 update usuarios
 set rol='ADMIN'
 where id_usuario=1
-
-
-select * from dbo.estudios_clinicos
 */
 GO
 
@@ -765,7 +762,7 @@ GO
 
 ================================================================================*/
 
-    go--endpoint
+go--endpoint
 CREATE OR ALTER PROCEDURE dbo.sp_registrar_usuario
     @json NVARCHAR(MAX)
     AS
@@ -896,7 +893,7 @@ BEGIN
         SET @login_valido = 0;
         SET @rol          = NULL;
         SET @email_out    = NULL;
-        SET @id_usuario   = NULL;
+		SET @id_usuario   = NULL;
 END
 
 END;
@@ -1079,6 +1076,7 @@ GO
 
 
 ================================================================================*/
+go
 CREATE OR ALTER PROCEDURE dbo.sp_get_categorias
     AS
 BEGIN
@@ -1091,6 +1089,7 @@ ORDER BY nombre
 END;
 GO
 
+go
 CREATE OR ALTER PROCEDURE dbo.sp_insert_categoria_json
     (
     @json NVARCHAR(MAX)
@@ -2212,7 +2211,10 @@ BEGIN TRAN;
             @tratamiento NVARCHAR(MAX) = JSON_VALUE(@json, '$.tratamiento'),
             @observaciones NVARCHAR(MAX) = JSON_VALUE(@json, '$.observaciones');
 
-        -- 🔒 Validación
+        ---------------------------------------------------
+        -- VALIDACIONES
+        ---------------------------------------------------
+
         IF @id_consulta IS NULL
 BEGIN
 SELECT 0 AS success, 'id_consulta obligatorio' AS mensaje
@@ -2229,7 +2231,10 @@ SELECT 0 AS success, 'La consulta no existe' AS mensaje
 RETURN;
 END
 
-        -- 🩺 UPDATE INTELIGENTE
+        ---------------------------------------------------
+        -- UPDATE CONSULTA
+        ---------------------------------------------------
+
 UPDATE dbo.consultas_clinicas
 SET
     motivo_consulta = COALESCE(@motivo, motivo_consulta),
@@ -2241,6 +2246,40 @@ SET
     observaciones = COALESCE(@observaciones, observaciones)
 WHERE id_consulta = @id_consulta;
 
+---------------------------------------------------
+-- 🔥 ESTUDIOS (CORRECTO)
+---------------------------------------------------
+
+IF EXISTS (SELECT 1 FROM OPENJSON(@json, '$.estudios'))
+BEGIN
+
+            -- SOLO insertar si NO tiene estudios
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.estudios_clinicos   -- 🔥 TABLA CORRECTA
+                WHERE id_consulta = @id_consulta
+            )
+BEGIN
+INSERT INTO dbo.estudios_clinicos
+(
+    id_consulta,
+    tipo_estudio,
+    resultado,
+    observaciones
+)
+SELECT
+    @id_consulta,
+    JSON_VALUE(value, '$.tipo_estudio'),
+    JSON_VALUE(value, '$.resultado'),
+    JSON_VALUE(value, '$.observaciones')
+FROM OPENJSON(@json, '$.estudios')
+WHERE JSON_VALUE(value, '$.tipo_estudio') IS NOT NULL;
+END
+
+END
+
+        ---------------------------------------------------
+
 COMMIT;
 
 SELECT
@@ -2250,6 +2289,7 @@ SELECT
 
 END TRY
 BEGIN CATCH
+
 IF @@TRANCOUNT > 0
             ROLLBACK;
 
@@ -2257,6 +2297,7 @@ SELECT
     0 AS success,
     ERROR_MESSAGE() AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END CATCH
 END;
 GO

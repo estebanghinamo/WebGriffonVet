@@ -606,11 +606,50 @@ public class GriffonVetRepository {
         }
     }
 
-    public String actualizarConsultaClinica(String json) {
+    public String actualizarConsultaClinica(String json, MultipartFile[] archivos) {
 
         try {
+            JsonObject consulta = JsonParser.parseString(json).getAsJsonObject();
+            JsonArray estudios = consulta.getAsJsonArray("estudios");
+
+            int fileIndex = 0;
+
+            if (estudios != null) {
+                for (int i = 0; i < estudios.size(); i++) {
+
+                    JsonObject estudio = estudios.get(i).getAsJsonObject();
+
+                    // 🔥 SI HAY ARCHIVO
+                    if (archivos != null && fileIndex < archivos.length) {
+
+                        MultipartFile file = archivos[fileIndex];
+
+                        if (file != null && !file.isEmpty()) {
+
+                            String url = cloudinaryService.subirArchivo(file);
+
+                            // 🔥 CLAVE: INYECTAR URL
+                            estudio.addProperty("resultado", url);
+
+                            fileIndex++;
+
+                        } else {
+                            estudio.addProperty("resultado", "");
+                        }
+
+                    } else {
+                        estudio.addProperty("resultado", "");
+                    }
+
+                    // fallback
+                    if (!estudio.has("resultado")) {
+                        estudio.addProperty("resultado", "");
+                    }
+                }
+            }
+
             MapSqlParameterSource params = new MapSqlParameterSource()
-                    .addValue("json", json);
+                    .addValue("json", consulta.toString());
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
                     "sp_update_consulta_clinica_json",
@@ -621,22 +660,16 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
-                return "{\"success\": 0, \"mensaje\": \"Error al actualizar consulta\"}";
+                return "{\"ok\": false, \"mensaje\": \"Error al actualizar\"}";
             }
 
-            // 🔹 JSON directo del SP
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null ? value.toString() : "{\"ok\": false}";
 
         } catch (Exception e) {
-            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+            return "{\"ok\": false, \"mensaje\": \"" + e.getMessage() + "\"}";
         }
     }
 

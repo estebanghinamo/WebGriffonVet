@@ -186,13 +186,15 @@ public class GriffonVetResources {
                 .body(response);
     }
 
-    @PutMapping("/ActualizarConsultaClinica")
-    public ResponseEntity<String> actualizarConsultaClinica(@RequestBody String json) {
+    @PutMapping(value = "/ActualizarConsultaClinica", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> actualizarConsultaClinica(
+            @RequestParam("consulta") String json,
+            @RequestParam(value = "archivos", required = false) MultipartFile[] archivos
+    ) {
 
-        String response = griffonVetRepository.actualizarConsultaClinica(json);
+        String response = griffonVetRepository.actualizarConsultaClinica(json, archivos);
 
-        return ResponseEntity
-                .ok()
+        return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
