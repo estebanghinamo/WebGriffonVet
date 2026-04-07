@@ -86,7 +86,7 @@ CREATE TABLE dbo.mascotas (
                               observaciones NVARCHAR(1000) NULL,-- Observaciones generales cargadas por el cliente o admin
                               activo BIT NOT NULL DEFAULT 1,-- Baja logica de la mascota
                               fecha_registro DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha en la que se registro la mascota
-
+                              castrado BIT NOT NULL DEFAULT 0,
                               CONSTRAINT FK_mascotas_usuarios
                                   FOREIGN KEY (id_usuario) REFERENCES dbo.usuarios(id_usuario),
                               CONSTRAINT CK_mascotas_tamanio
@@ -241,6 +241,7 @@ CREATE TABLE dbo.consultas_clinicas (
                                         motivo_consulta NVARCHAR(500) NULL, -- Motivo por el cual se atendio al paciente
                                         anamnesis NVARCHAR(MAX) NULL,-- Informacion recopilada del dueño/paciente
                                         examen_general NVARCHAR(MAX) NULL,-- Hallazgos del examen fisico general
+                                        diagnostico_presuntivo NVARCHAR(MAX) NULL,
                                         diagnostico NVARCHAR(MAX) NULL,-- Diagnostico o impresion clinica
                                         tratamiento NVARCHAR(MAX) NULL,-- Tratamiento general indicado
                                         observaciones NVARCHAR(MAX) NULL,-- Observaciones complementarias
@@ -692,8 +693,8 @@ VALUES
 
 /*
 ---------------INSERTS DE PRUEBAS----------------------
-													
-													
+
+
 INSERT INTO dbo.usuarios (nombre, apellido, email, telefono, password_hash, rol)
 VALUES
 ('juana', 'peres', 'juana@gmail.com', '3571551111', 'admin123', 'ADMIN'),
@@ -734,10 +735,12 @@ VALUES
 
 */
 
-
-
-
-
+/*
+update usuarios
+set rol='ADMIN'
+where id_usuario=1
+*/
+GO
 
 
 
@@ -786,8 +789,8 @@ END
 
     -- 🔹 Validar duplicado
     IF EXISTS (
-        SELECT 1 
-        FROM dbo.usuarios 
+        SELECT 1
+        FROM dbo.usuarios
         WHERE email = @email
     )
 BEGIN
@@ -855,6 +858,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_login_usuario_json
     AS
 BEGIN
     SET NOCOUNT ON;
+
     DECLARE @email             NVARCHAR(150);
     DECLARE @password          NVARCHAR(255);
     DECLARE @password_hash_bin VARBINARY(64);
@@ -878,8 +882,8 @@ BEGIN
         SET @login_valido = 0;
         SET @rol          = NULL;
         SET @email_out    = NULL;
-        SET @id_usuario   = NULL;
 END
+
 END;
 GO
 
@@ -895,7 +899,7 @@ BEGIN
 BEGIN TRY
 BEGIN TRAN;
 
-        DECLARE 
+        DECLARE
             -- 👤 CLIENTE
 @nombre NVARCHAR(100) = JSON_VALUE(@json, '$.cliente.nombre'),
             @apellido NVARCHAR(100) = JSON_VALUE(@json, '$.cliente.apellido'),
@@ -912,7 +916,10 @@ BEGIN TRAN;
             @fecha_nacimiento DATE = JSON_VALUE(@json, '$.mascota.fecha_nacimiento'),
             @sexo NVARCHAR(20) = JSON_VALUE(@json, '$.mascota.sexo'),
             @tipo_pelaje NVARCHAR(50) = JSON_VALUE(@json, '$.mascota.tipo_pelaje'),
-            @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.mascota.observaciones');
+            @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.mascota.observaciones'),
+
+            -- 🆕 NUEVO CAMPO
+            @castrado BIT = ISNULL(TRY_CAST(JSON_VALUE(@json, '$.mascota.castrado') AS BIT), 0);
 
         DECLARE @id_usuario INT;
 
@@ -942,7 +949,7 @@ ROLLBACK;
 RETURN;
 END
 
-        -- 🔐 HASH PASSWORD (igual que tu SP)
+        -- 🔐 HASH PASSWORD
         SET @password_hash = HASHBYTES('SHA2_256', @password);
 
         -- 👤 INSERT CLIENTE
@@ -971,7 +978,7 @@ VALUES
 
 SET @id_usuario = SCOPE_IDENTITY();
 
-        -- 🐶 INSERT MASCOTA (solo si viene info)
+        -- 🐶 INSERT MASCOTA
         IF @nombre_mascota IS NOT NULL AND @nombre_mascota <> ''
 BEGIN
 INSERT INTO dbo.mascotas
@@ -985,6 +992,7 @@ INSERT INTO dbo.mascotas
     sexo,
     tipo_pelaje,
     observaciones,
+    castrado, -- 👈 NUEVO
     activo,
     fecha_registro
 )
@@ -999,6 +1007,7 @@ VALUES
         @sexo,
         @tipo_pelaje,
         @observaciones,
+        @castrado, -- 👈 NUEVO
         1,
         GETDATE()
     );
@@ -1025,7 +1034,8 @@ SELECT
                             m.id_mascota,
                             m.nombre,
                             m.especie,
-                            m.raza
+                            m.raza,
+                            m.castrado -- 👈 opcional: lo devuelvo
                         FROM dbo.mascotas m
                         WHERE m.id_usuario = u.id_usuario
                 FOR JSON PATH
@@ -1187,8 +1197,8 @@ RETURN;
 END
 
     IF NOT EXISTS (
-        SELECT 1 
-        FROM dbo.productos 
+        SELECT 1
+        FROM dbo.productos
         WHERE id_producto = @id_producto
     )
 BEGIN
@@ -1310,7 +1320,7 @@ go
 
 
 ================================================================================*/
-GO--endpoint
+GO--endpoint  (vista usuario)
 CREATE OR ALTER PROCEDURE dbo.sp_get_mascotas_por_usuario_json
     @json NVARCHAR(MAX)
     AS
@@ -1348,8 +1358,8 @@ SELECT
                     m.fecha_nacimiento,
                     m.comportamiento,
                     m.observaciones,
-                    m.tipo_pelaje
-
+                    m.tipo_pelaje,
+                    m.castrado
                 FROM dbo.mascotas m
                 WHERE m.id_usuario = @id_usuario
                   AND m.activo = 1
@@ -1383,7 +1393,10 @@ BEGIN
         @tipo_pelaje NVARCHAR(50),
         @alergias_general NVARCHAR(MAX),
         @comportamiento NVARCHAR(MAX),
-        @observaciones NVARCHAR(MAX);
+        @observaciones NVARCHAR(MAX),
+
+        -- 🆕 NUEVO
+        @castrado BIT;
 
     -- 🔹 Parsear JSON
 SELECT
@@ -1397,7 +1410,10 @@ SELECT
     @tipo_pelaje = JSON_VALUE(@json, '$.tipo_pelaje'),
     @alergias_general = JSON_VALUE(@json, '$.alergias_general'),
     @comportamiento = JSON_VALUE(@json, '$.comportamiento'),
-    @observaciones = JSON_VALUE(@json, '$.observaciones');
+    @observaciones = JSON_VALUE(@json, '$.observaciones'),
+
+    -- 🆕 NUEVO (con default 0)
+    @castrado = ISNULL(TRY_CAST(JSON_VALUE(@json, '$.castrado') AS BIT), 0);
 
 -- 🔹 Validaciones mínimas
 IF @id_usuario IS NULL OR @nombre IS NULL OR @especie IS NULL
@@ -1422,13 +1438,14 @@ INSERT INTO dbo.mascotas (
     alergias_general,
     comportamiento,
     observaciones,
+    castrado, -- 👈 NUEVO
     activo,
     fecha_registro
 )
 VALUES (
            @id_usuario,
            @nombre,
-           UPPER(@especie), -- 🔥 consistente con UI
+           UPPER(@especie),
            @raza,
            @tamanio,
            @fecha_nacimiento,
@@ -1437,6 +1454,7 @@ VALUES (
            @alergias_general,
            @comportamiento,
            @observaciones,
+           @castrado, -- 👈 NUEVO
            1,
            GETDATE()
        );
@@ -1456,7 +1474,8 @@ SELECT
                     m.raza,
                     m.tamanio,
                     m.fecha_nacimiento,
-                    m.sexo
+                    m.sexo,
+                    m.castrado -- 👈 opcional (te lo dejo)
                 FROM dbo.mascotas m
                 WHERE m.id_mascota = @id_mascota
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
@@ -1467,14 +1486,13 @@ SELECT
 END;
 GO
 
-
 /*============================================================================0
 
   procedimientos de administrador obtencion y modificacion de historias clinicas
 
 
 ================================================================================*/
- 
+
 go
 GO--endpoint
 CREATE OR ALTER PROCEDURE dbo.sp_get_clientes_con_mascotas_json_filtrado
@@ -1514,7 +1532,8 @@ SELECT
                     m.comportamiento,
                     m.observaciones,
                     m.activo,
-                    m.fecha_registro
+                    m.fecha_registro,
+                    m.castrado
                 FROM dbo.mascotas m
                 WHERE m.id_usuario = u.id_usuario
                   AND m.activo = 1
@@ -1578,7 +1597,8 @@ GO
 
 --DECLARE @json NVARCHAR(MAX) = '{ "id_usuario": 1,"id_mascota": 1}';
 --EXEC dbo.sp_get_informacioncompleta_mascota @json;
-go--endpointt
+
+go--endpointt  (esto es para la vista admin, aca esta toda la info)
 CREATE OR ALTER PROCEDURE dbo.sp_get_informacioncompleta_mascota
     (
     @json NVARCHAR(MAX)
@@ -1614,6 +1634,7 @@ SELECT
     m.tipo_pelaje,
     m.comportamiento,
     m.observaciones,
+    m.castrado,
 
     -- 🐾 PESO HISTÓRICO
     ISNULL(JSON_QUERY((
@@ -1727,19 +1748,23 @@ CREATE OR ALTER PROCEDURE dbo.sp_editar_infogeneral_mascota
     AS
 BEGIN
     SET NOCOUNT ON;
+
     DECLARE
 @id_usuario INT,
-    @id_mascota INT,
-    @nombre NVARCHAR(100),
-    @especie NVARCHAR(50),
-    @raza NVARCHAR(100),
-    @tamanio NVARCHAR(20),
-    @fecha_nacimiento DATE,
-    @sexo NVARCHAR(20),
-    @tipo_pelaje NVARCHAR(100),
-    @alergias_general NVARCHAR(500),
-    @comportamiento NVARCHAR(300),
-    @observaciones NVARCHAR(1000);
+        @id_mascota INT,
+        @nombre NVARCHAR(100),
+        @especie NVARCHAR(50),
+        @raza NVARCHAR(100),
+        @tamanio NVARCHAR(20),
+        @fecha_nacimiento DATE,
+        @sexo NVARCHAR(20),
+        @tipo_pelaje NVARCHAR(100),
+        @alergias_general NVARCHAR(500),
+        @comportamiento NVARCHAR(300),
+        @observaciones NVARCHAR(1000),
+
+        -- 🆕 NUEVO
+        @castrado BIT;
 
 SELECT
     @id_usuario = TRY_CAST(JSON_VALUE(@json, '$.id_usuario') AS INT),
@@ -1752,7 +1777,10 @@ SELECT
     @tipo_pelaje = JSON_VALUE(@json, '$.tipo_pelaje'),
     @alergias_general = JSON_VALUE(@json, '$.alergias_general'),
     @comportamiento = JSON_VALUE(@json, '$.comportamiento'),
-    @observaciones = JSON_VALUE(@json, '$.observaciones');
+    @observaciones = JSON_VALUE(@json, '$.observaciones'),
+
+    -- 🆕 NUEVO (solo se actualiza si viene)
+    @castrado = TRY_CAST(JSON_VALUE(@json, '$.castrado') AS BIT);
 
 -- 🔥 CLAVE
 SET @fecha_nacimiento = TRY_CONVERT(DATE, JSON_VALUE(@json, '$.fecha_nacimiento'));
@@ -1785,7 +1813,11 @@ SET
     tipo_pelaje = ISNULL(@tipo_pelaje, tipo_pelaje),
     alergias_general = ISNULL(@alergias_general, alergias_general),
     comportamiento = ISNULL(@comportamiento, comportamiento),
-    observaciones = ISNULL(@observaciones, observaciones)
+    observaciones = ISNULL(@observaciones, observaciones),
+
+    -- 🆕 NUEVO (clave)
+    castrado = ISNULL(@castrado, castrado)
+
 WHERE id_mascota = @id_mascota;
 
 -- 📦 Respuesta
@@ -1793,10 +1825,13 @@ SELECT *
 FROM dbo.mascotas
 WHERE id_mascota = @id_mascota
     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END;
 GO
 
 
+
+--aca
 
 
 --obligatorio lo de la tabla consulta_clinica, las otras 3 trablas pueden o no estar con datos
@@ -1818,6 +1853,7 @@ BEGIN TRAN;
             @motivo NVARCHAR(500) = JSON_VALUE(@json, '$.motivo_consulta'),
             @anamnesis NVARCHAR(MAX) = JSON_VALUE(@json, '$.anamnesis'),
             @examen NVARCHAR(MAX) = JSON_VALUE(@json, '$.examen_general'),
+            @diagnostico_presuntivo NVARCHAR(MAX) = JSON_VALUE(@json, '$.diagnostico_presuntivo'), -- 🔥 NUEVO
             @diagnostico NVARCHAR(MAX) = JSON_VALUE(@json, '$.diagnostico'),
             @tratamiento_general NVARCHAR(MAX) = JSON_VALUE(@json, '$.tratamiento'),
             @observaciones NVARCHAR(MAX) = JSON_VALUE(@json, '$.observaciones');
@@ -1864,6 +1900,7 @@ INSERT INTO dbo.consultas_clinicas
     motivo_consulta,
     anamnesis,
     examen_general,
+    diagnostico_presuntivo, -- 🔥 NUEVO
     diagnostico,
     tratamiento,
     observaciones
@@ -1874,6 +1911,7 @@ VALUES
         @motivo,
         @anamnesis,
         @examen,
+        @diagnostico_presuntivo, -- 🔥 NUEVO
         @diagnostico,
         @tratamiento_general,
         @observaciones
@@ -1881,7 +1919,7 @@ VALUES
 
 DECLARE @id_consulta INT = SCOPE_IDENTITY();
 
-        -- 💊 TRATAMIENTOS (AHORA POR ID)
+        -- 💊 TRATAMIENTOS
         IF EXISTS (SELECT 1 FROM OPENJSON(@json, '$.tratamientos'))
 BEGIN
             DECLARE @tmp_tratamientos TABLE
@@ -1902,7 +1940,7 @@ SELECT
     JSON_VALUE(value, '$.indicaciones')
 FROM OPENJSON(@json, '$.tratamientos');
 
--- 🔒 Validar existencia de medicamentos
+-- 🔒 Validación medicamentos
 IF EXISTS (
                 SELECT 1
                 FROM @tmp_tratamientos t
@@ -1921,7 +1959,6 @@ SELECT
 RETURN;
 END
 
-            -- 💊 Insertar tratamientos
 INSERT INTO dbo.tratamientos
 (id_consulta, id_medicamento, dosis, frecuencia, duracion_dias, indicaciones)
 SELECT
@@ -2008,7 +2045,7 @@ DECLARE @json NVARCHAR(MAX) = '
 
 EXEC dbo.sp_insert_consulta_clinica_json @json;
 
-SELECT 
+SELECT
     c.id_consulta,
     c.fecha,
     c.motivo_consulta,
@@ -2027,27 +2064,96 @@ SELECT
 
 FROM dbo.consultas_clinicas c
 
-LEFT JOIN dbo.tratamientos t 
+LEFT JOIN dbo.tratamientos t
     ON t.id_consulta = c.id_consulta
 
-LEFT JOIN dbo.medicamentos m 
+LEFT JOIN dbo.medicamentos m
     ON m.id_medicamento = t.id_medicamento
 
-LEFT JOIN dbo.estudios_clinicos e 
+LEFT JOIN dbo.estudios_clinicos e
     ON e.id_consulta = c.id_consulta
 
-LEFT JOIN dbo.archivos_clinicos a 
+LEFT JOIN dbo.archivos_clinicos a
     ON a.id_consulta = c.id_consulta
 
 ORDER BY c.id_consulta DESC;
 */
 go
 
+CREATE OR ALTER PROCEDURE dbo.sp_update_consulta_clinica_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE
+@id_consulta INT = JSON_VALUE(@json, '$.id_consulta'),
+            @motivo NVARCHAR(500) = JSON_VALUE(@json, '$.motivo_consulta'),
+            @anamnesis NVARCHAR(MAX) = JSON_VALUE(@json, '$.anamnesis'),
+            @examen NVARCHAR(MAX) = JSON_VALUE(@json, '$.examen_general'),
+            @diagnostico_presuntivo NVARCHAR(MAX) = JSON_VALUE(@json, '$.diagnostico_presuntivo'),
+            @diagnostico NVARCHAR(MAX) = JSON_VALUE(@json, '$.diagnostico'),
+            @tratamiento NVARCHAR(MAX) = JSON_VALUE(@json, '$.tratamiento'),
+            @observaciones NVARCHAR(MAX) = JSON_VALUE(@json, '$.observaciones');
+
+        -- 🔒 Validación
+        IF @id_consulta IS NULL
+BEGIN
+SELECT 0 AS success, 'id_consulta obligatorio' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.consultas_clinicas WHERE id_consulta = @id_consulta
+        )
+BEGIN
+SELECT 0 AS success, 'La consulta no existe' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+        -- 🩺 UPDATE INTELIGENTE
+UPDATE dbo.consultas_clinicas
+SET
+    motivo_consulta = COALESCE(@motivo, motivo_consulta),
+    anamnesis = COALESCE(@anamnesis, anamnesis),
+    examen_general = COALESCE(@examen, examen_general),
+    diagnostico_presuntivo = COALESCE(@diagnostico_presuntivo, diagnostico_presuntivo),
+    diagnostico = COALESCE(@diagnostico, diagnostico),
+    tratamiento = COALESCE(@tratamiento, tratamiento),
+    observaciones = COALESCE(@observaciones, observaciones)
+WHERE id_consulta = @id_consulta;
+
+COMMIT;
+
+SELECT
+    1 AS success,
+    'Consulta actualizada correctamente' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+            ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+END CATCH
+END;
+GO
 /*============================================================================0
   procedimientos de administrar medicamentos
 ================================================================================*/
 go
---para el selector del formulario 
+--para el selector del formulario
 CREATE OR ALTER PROCEDURE dbo.sp_get_medicamentos
     AS
 BEGIN
@@ -2511,7 +2617,7 @@ END
     SET @tipo_normalizado = UPPER(@tipo);
 
     -- 🔒 Validación tipo (opcional pero PRO)
-    IF @tipo_normalizado IS NOT NULL 
+    IF @tipo_normalizado IS NOT NULL
        AND @tipo_normalizado NOT IN ('INTERNO', 'EXTERNO')
 BEGIN
 SELECT

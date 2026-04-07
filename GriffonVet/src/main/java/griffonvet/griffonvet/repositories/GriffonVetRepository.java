@@ -507,6 +507,40 @@ public class GriffonVetRepository {
         }
     }
 
+    public String actualizarConsultaClinica(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_update_consulta_clinica_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al actualizar consulta\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
     public String obtenerMedicamentos() {
 
         try {

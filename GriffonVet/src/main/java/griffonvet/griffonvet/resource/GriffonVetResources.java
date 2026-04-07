@@ -163,6 +163,17 @@ public class GriffonVetResources {
                 .body(response);
     }
 
+    @PutMapping("/ActualizarConsultaClinica")
+    public ResponseEntity<String> actualizarConsultaClinica(@RequestBody String json) {
+
+        String response = griffonVetRepository.actualizarConsultaClinica(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
     @GetMapping("/ObtenerMedicamentos")
     public ResponseEntity<String> obtenerMedicamentos() {
 
