@@ -163,6 +163,73 @@ public class GriffonVetRepository {
         }
     }
 
+    public String obtenerCategorias() {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_categorias",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"categorias\": []}";
+            }
+
+            // 🔹 El SP devuelve JSON directo
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"categorias\": []}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarCategoria(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_categoria_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al procesar categoria\"}";
+            }
+
+            // 🔹 El SP ya devuelve JSON completo
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
     public String obtenerProductos() {
 
         MapSqlParameterSource params = new MapSqlParameterSource();

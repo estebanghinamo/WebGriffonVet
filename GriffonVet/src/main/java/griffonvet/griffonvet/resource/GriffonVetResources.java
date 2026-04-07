@@ -70,6 +70,25 @@ public class GriffonVetResources {
                 .body(griffonVetRepository.getClientes());
     }
 
+    @GetMapping("/ObtenerCateorias")
+    public ResponseEntity<String> obtenerCateorias() {
+
+        String response = griffonVetRepository.obtenerCategorias();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/InsertarCategoria")
+    public ResponseEntity<String> insertarCateoria(@RequestBody String json) {
+        System.out.println(json);
+        String response = griffonVetRepository.insertarCategoria(json);
+
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
     @GetMapping("/obtenerProductos")
     public ResponseEntity<String> obtenerProductos() {
 

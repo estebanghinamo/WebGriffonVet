@@ -36,10 +36,12 @@ IF OBJECT_ID('dbo.vacunas', 'U') IS NOT NULL DROP TABLE dbo.vacunas;
 IF OBJECT_ID('dbo.desparasitaciones', 'U') IS NOT NULL DROP TABLE dbo.desparasitaciones;
 IF OBJECT_ID('dbo.alergias', 'U') IS NOT NULL DROP TABLE dbo.alergias;
 
+
 IF OBJECT_ID('dbo.agenda_bloqueos', 'U') IS NOT NULL DROP TABLE dbo.agenda_bloqueos;
 IF OBJECT_ID('dbo.horarios_atencion', 'U') IS NOT NULL DROP TABLE dbo.horarios_atencion;
 IF OBJECT_ID('dbo.productos', 'U') IS NOT NULL DROP TABLE dbo.productos;
 IF OBJECT_ID('dbo.servicios_precios', 'U') IS NOT NULL DROP TABLE dbo.servicios_precios;
+IF OBJECT_ID('dbo.categorias', 'U') IS NOT NULL DROP TABLE dbo.categorias;
 
 IF OBJECT_ID('dbo.servicios', 'U') IS NOT NULL DROP TABLE dbo.servicios;
 
@@ -128,8 +130,15 @@ CREATE TABLE dbo.servicios_precios (
                                            CHECK (tamanio IN ('CHICO', 'MEDIANO', 'GRANDE'))
 );
 GO
-
-
+-- =========================================================
+-- TABLA: categorias
+-- categorias de productos
+-- =========================================================
+CREATE TABLE dbo.categorias (
+                                id_categoria INT IDENTITY(1,1) PRIMARY KEY,-- Identificador de la categoria
+                                nombre NVARCHAR(150) NOT NULL,-- Nombre de la categoria
+);
+GO
 -- =========================================================
 -- TABLA: productos
 -- Catalogo de productos visibles en la pagina
@@ -140,11 +149,13 @@ CREATE TABLE dbo.productos (
                                nombre NVARCHAR(150) NOT NULL,-- Nombre comercial del producto
                                descripcion NVARCHAR(1000) NULL,-- Descripcion del producto
                                precio DECIMAL(12,2) NOT NULL, -- Precio del producto
-                               categoria NVARCHAR(100) NOT NULL,-- Categoria: alimento, shampoo, juguete, etc.
+                               id_categoria INT NOT NULL,-- Categoria: alimento, shampoo, juguete, etc.
                                imagen_url NVARCHAR(500) NULL, -- URL o ruta de imagen del producto
                                stock INT NULL,-- Stock opcional, por si queres mostrar disponibilidad
                                activo BIT NOT NULL DEFAULT 1,-- Indica si el producto esta visible
                                fecha_alta DATETIME NOT NULL DEFAULT GETDATE()-- Fecha de alta del producto
+                                   CONSTRAINT FK_productos_categorias
+                                   FOREIGN KEY (id_categoria) REFERENCES dbo.categorias(id_categoria)
 );
 GO
 
@@ -495,7 +506,7 @@ CREATE INDEX IX_mascotas_nombre
 ------------------------------------------------------------
 
 CREATE INDEX IX_productos_categoria
-    ON dbo.productos(categoria);
+    ON dbo.productos(id_categoria);
 
 CREATE INDEX IX_productos_nombre
     ON dbo.productos(nombre);
@@ -739,11 +750,14 @@ VALUES
 update usuarios
 set rol='ADMIN'
 where id_usuario=1
+
+
+select * from dbo.estudios_clinicos
 */
 GO
 
 
-select * from dbo.estudios_clinicos
+
 /*============================================================================0
 
   procedimientos de registrar y login
@@ -882,6 +896,7 @@ BEGIN
         SET @login_valido = 0;
         SET @rol          = NULL;
         SET @email_out    = NULL;
+        SET @id_usuario   = NULL;
 END
 
 END;
@@ -1064,7 +1079,98 @@ GO
 
 
 ================================================================================*/
+CREATE OR ALTER PROCEDURE dbo.sp_get_categorias
+    AS
+BEGIN
+SELECT
+    id_categoria,
+    nombre
+FROM dbo.categorias
+ORDER BY nombre
+    FOR JSON PATH;
+END;
+GO
 
+CREATE OR ALTER PROCEDURE dbo.sp_insert_categoria_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+@nombre NVARCHAR(150),
+        @nombre_normalizado NVARCHAR(150),
+        @id_categoria INT;
+
+    -- 🔹 Parsear JSON
+SELECT
+    @nombre = LTRIM(RTRIM(JSON_VALUE(@json, '$.nombre')));
+
+-- 🔒 Validación
+IF @nombre IS NULL OR @nombre = ''
+BEGIN
+SELECT
+    0 AS success,
+    'El nombre de la categoría es obligatorio' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    -- 🔥 Normalización (evita duplicados tipo "Alimento" vs "alimento")
+    SET @nombre_normalizado = UPPER(@nombre);
+
+    -- 🔍 Buscar si ya existe
+SELECT @id_categoria = id_categoria
+FROM dbo.categorias
+WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
+
+-- 🔁 Si ya existe → devolverla
+IF @id_categoria IS NOT NULL
+BEGIN
+SELECT
+    1 AS success,
+    'La categoría ya existía' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    id_categoria,
+                    nombre
+                FROM dbo.categorias
+                WHERE id_categoria = @id_categoria
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+            ) AS categoria
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+RETURN;
+END
+
+    -- ➕ Insertar
+INSERT INTO dbo.categorias (nombre)
+VALUES (@nombre_normalizado);
+
+SET @id_categoria = SCOPE_IDENTITY();
+
+    -- ✅ Respuesta
+SELECT
+    1 AS success,
+    'Categoría creada correctamente' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    id_categoria,
+                    nombre
+                FROM dbo.categorias
+                WHERE id_categoria = @id_categoria
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+        ) AS categoria
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END;
+GO
 
 GO--endpoint
 CREATE OR ALTER PROCEDURE dbo.sp_get_productos_json
@@ -1077,12 +1183,15 @@ SELECT
     p.nombre,
     p.descripcion,
     p.precio,
-    p.categoria,
+    p.id_categoria,
+    c.nombre AS categoria,
     p.imagen_url,
     p.stock,
     p.activo,
     p.fecha_alta
 FROM dbo.productos p
+         INNER JOIN dbo.categorias c
+                    ON p.id_categoria = c.id_categoria
 WHERE p.activo = 1
 ORDER BY p.nombre
     FOR JSON PATH, ROOT('productos');
@@ -1095,106 +1204,86 @@ CREATE OR ALTER PROCEDURE dbo.sp_insert_producto_json
     AS
 BEGIN
     SET NOCOUNT ON;
-
 BEGIN TRY
-
         DECLARE
-@nombre NVARCHAR(200),
+@nombre      NVARCHAR(200),
             @descripcion NVARCHAR(MAX),
-            @precio DECIMAL(10,2),
-            @categoria NVARCHAR(100),
-            @imagen_url NVARCHAR(500),
-            @stock INT;
+            @precio      DECIMAL(10,2),
+            @id_categoria INT,
+            @imagen_url  NVARCHAR(500),
+            @stock       INT;
 
-        -- 🔹 Parsear JSON
+        -- Parsear JSON
 SELECT
-    @nombre = JSON_VALUE(@json, '$.nombre'),
-    @descripcion = JSON_VALUE(@json, '$.descripcion'),
-    @precio = CAST(JSON_VALUE(@json, '$.precio') AS DECIMAL(10,2)),
-    @categoria = JSON_VALUE(@json, '$.categoria'),
-    @imagen_url = JSON_VALUE(@json, '$.imagen_url'),
-    @stock = CAST(JSON_VALUE(@json, '$.stock') AS INT);
+    @nombre       = JSON_VALUE(@json, '$.nombre'),
+    @descripcion  = JSON_VALUE(@json, '$.descripcion'),
+    @precio       = CAST(JSON_VALUE(@json, '$.precio') AS DECIMAL(10,2)),
+    @id_categoria = CAST(JSON_VALUE(@json, '$.id_categoria') AS INT),
+    @imagen_url   = JSON_VALUE(@json, '$.imagen_url'),
+    @stock        = CAST(JSON_VALUE(@json, '$.stock') AS INT);
 
--- 🔹 Validación
-IF @nombre IS NULL OR @precio IS NULL
+-- Validaciones
+IF @nombre IS NULL OR @precio IS NULL OR @id_categoria IS NULL
 BEGIN
-SELECT
-    0 AS success,
-    'Faltan datos obligatorios' AS mensaje
+SELECT 0 AS success, 'Faltan datos obligatorios' AS mensaje  -- ✅ alias agregado
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
 RETURN;
 END
 
-        -- 🔹 Insert
-INSERT INTO dbo.productos (
-    nombre,
-    descripcion,
-    precio,
-    categoria,
-    imagen_url,
-    stock,
-    activo,
-    fecha_alta
-)
-VALUES (
-           @nombre,
-           @descripcion,
-           @precio,
-           @categoria,
-           @imagen_url,
-           @stock,
-           1,
-           GETDATE()
-       );
+        -- Validar categoría
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.categorias WHERE id_categoria = @id_categoria
+        )
+BEGIN
+SELECT 0 AS success, 'La categoría no existe' AS mensaje  -- ✅ alias agregado
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+        -- Insert
+INSERT INTO dbo.productos (nombre, descripcion, precio, id_categoria, imagen_url, stock, activo, fecha_alta)
+VALUES (@nombre, @descripcion, @precio, @id_categoria, @imagen_url, @stock, 1, GETDATE());
 
 DECLARE @id_producto INT = SCOPE_IDENTITY();
 
-        -- 🔹 Respuesta
+        -- Respuesta con JOIN
 SELECT
     1 AS success,
     'Producto creado correctamente' AS mensaje,
-    JSON_QUERY(
-            (
-                SELECT *
-                FROM dbo.productos
-                WHERE id_producto = @id_producto
-                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-        )
-            ) AS producto
+    JSON_QUERY((
+                   SELECT
+                       p.*,
+                       c.nombre AS categoria
+                   FROM dbo.productos p
+                            INNER JOIN dbo.categorias c ON p.id_categoria = c.id_categoria
+                   WHERE p.id_producto = @id_producto
+                   FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )) AS producto
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY
 BEGIN CATCH
-
-SELECT
-    0 AS success,
-    ERROR_MESSAGE() AS mensaje
+SELECT 0 AS success, ERROR_MESSAGE() AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
 END CATCH
 END;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_delete_producto_json
-    (
     @json NVARCHAR(MAX)
-    )
     AS
 BEGIN
     SET NOCOUNT ON;
 
     DECLARE @id_producto INT = TRY_CAST(JSON_VALUE(@json, '$.id_producto') AS INT);
 
-    -- 🔒 VALIDACIÓN
     IF @id_producto IS NULL
 BEGIN
-SELECT
-    0 AS success,
-    'id_producto es obligatorio' AS mensaje
+SELECT 0 AS success, 'id_producto es obligatorio'  AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 RETURN;
 END
+
 
     IF NOT EXISTS (
         SELECT 1
@@ -1202,22 +1291,16 @@ END
         WHERE id_producto = @id_producto
     )
 BEGIN
-SELECT
-    0 AS success,
-    'El producto no existe' AS mensaje
+SELECT 0 AS success, 'El producto no existe'  AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 RETURN;
 END
 
-    -- 🗑️ SOFT DELETE
 UPDATE dbo.productos
 SET activo = 0
 WHERE id_producto = @id_producto;
 
--- ✅ RESPUESTA
-SELECT
-    1 AS success,
-    'Producto eliminado correctamente' AS mensaje
+SELECT 1 AS success, 'Producto eliminado correctamente'  AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 END;
 GO
@@ -1235,7 +1318,7 @@ BEGIN
         @nombre NVARCHAR(200),
         @descripcion NVARCHAR(MAX),
         @precio DECIMAL(10,2),
-        @categoria NVARCHAR(100),
+        @id_categoria INT,
         @imagen_url NVARCHAR(500),
         @stock INT;
 
@@ -1245,16 +1328,24 @@ SELECT
     @nombre = JSON_VALUE(@json, '$.nombre'),
     @descripcion = JSON_VALUE(@json, '$.descripcion'),
     @precio = CAST(JSON_VALUE(@json, '$.precio') AS DECIMAL(10,2)),
-    @categoria = JSON_VALUE(@json, '$.categoria'),
+    @id_categoria = CAST(JSON_VALUE(@json, '$.id_categoria') AS INT),
     @imagen_url = JSON_VALUE(@json, '$.imagen_url'),
     @stock = CAST(JSON_VALUE(@json, '$.stock') AS INT);
 
--- 🔹 Validar existencia
+-- 🔒 Validar producto
 IF NOT EXISTS (SELECT 1 FROM dbo.productos WHERE id_producto = @id_producto)
 BEGIN
-SELECT
-    0 AS success,
-    'Producto no existe' AS mensaje
+SELECT 0 AS success, 'Producto no existe'  AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    -- 🔒 Validar categoría (si viene)
+    IF @id_categoria IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM dbo.categorias WHERE id_categoria = @id_categoria
+    )
+BEGIN
+SELECT 0 AS success, 'La categoría no existe'  AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 RETURN;
 END
@@ -1262,26 +1353,28 @@ END
     -- 🔹 Update
 UPDATE dbo.productos
 SET
-    nombre = @nombre,
-    descripcion = @descripcion,
-    precio = @precio,
-    categoria = @categoria,
+    nombre = ISNULL(@nombre, nombre),
+    descripcion = ISNULL(@descripcion, descripcion),
+    precio = ISNULL(@precio, precio),
+    id_categoria = ISNULL(@id_categoria, id_categoria),
     imagen_url = ISNULL(@imagen_url, imagen_url),
-    stock = @stock
+    stock = ISNULL(@stock, stock)
 WHERE id_producto = @id_producto;
 
--- ✅ Respuesta
+-- 🔹 Respuesta
 SELECT
     1 AS success,
     'Producto actualizado correctamente' AS mensaje,
-    JSON_QUERY(
-            (
-                SELECT *
-                FROM dbo.productos
-                WHERE id_producto = @id_producto
-                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-        )
-        ) AS producto
+    JSON_QUERY((
+                   SELECT
+                       p.*,
+                       c.nombre AS categoria
+                   FROM dbo.productos p
+                            INNER JOIN dbo.categorias c
+                                       ON p.id_categoria = c.id_categoria
+                   WHERE p.id_producto = @id_producto
+                   FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )) AS producto
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END;
