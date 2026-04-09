@@ -34,33 +34,78 @@ public class GriffonVetRepository {
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
-    public Map<String, String> login(String json) {
-        SqlParameterSource params = new MapSqlParameterSource()
-                .addValue("json", json);
-        try {
-            Map<String, Object> out = jdbcCallFactory.executeWithOutputs("sp_login_usuario_json", "dbo", params);
+//listo
+    public String registrarUsuario(String json) {
 
-            Integer loginValido = (Integer) out.get("login_valido");
-            if (loginValido == null || loginValido == 0) {
-                return null;
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_registrar_usuario",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al registrar usuario\"}";
             }
 
-            String  email     = (String)  out.get("email_out");
-            String  rol       = (String)  out.get("rol");
+            Object value = rs.get(0).values().iterator().next();
+
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"" + e.getMessage() + "\"}";
+        }
+    }
+//listo
+    public Map<String, Object> login(String json) {
+
+        SqlParameterSource params = new MapSqlParameterSource()
+                .addValue("json", json);
+
+        try {
+            Map<String, Object> out = jdbcCallFactory.executeWithOutputs(
+                    "sp_login_usuario_json",
+                    "dbo",
+                    params
+            );
+
+            Integer loginValido = (Integer) out.get("login_valido");
+
+            if (loginValido == null || loginValido == 0) {
+                return Map.of(
+                        "success", 0,
+                        "mensaje", "Email o contraseña incorrectos"
+                );
+            }
+
+            String email = (String) out.get("email_out");
+            String rol = (String) out.get("rol");
             Integer idUsuario = (Integer) out.get("id_usuario");
 
             String token = generarToken(email, idUsuario, rol);
 
             return Map.of(
+                    "success", 1,
                     "token", token
             );
 
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new RuntimeException("Error al loguearse: " + e.getMessage());
+
+            return Map.of(
+                    "success", 0,
+                    "mensaje", "Error interno: " + e.getMessage()
+            );
         }
     }
-
     private String generarToken(String correo, int idUsuario, String rol) {
         Date ahora     = new Date();
         Date expiracion = new Date(ahora.getTime() + 1000 * 60 * 60 * 2);
@@ -74,61 +119,7 @@ public class GriffonVetRepository {
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)), SignatureAlgorithm.HS256)
                 .compact();
     }
-
-    public String getClientes() throws JsonProcessingException {
-
-        Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                "sp_get_clientes_con_mascotas_json",
-                "dbo",
-                new MapSqlParameterSource()
-        );
-
-        List<Map<String, Object>> rs =
-                (List<Map<String, Object>>) result.get("#result-set-1");
-
-        if (rs == null || rs.isEmpty()) {
-            return "{\"productos\": []}";
-        }
-
-        // El SP ya devuelve JSON → lo sacamos directo
-        String jsonResult = (String) rs.get(0).get("json");
-
-        if (jsonResult == null) {
-            return "{\"clientes\": []}";
-        }
-
-        return jsonResult;
-    }
-
-    public String registrarUsuario(String json) {
-
-        //chequear que solo el gmail sea hotmail o gmail
-        //mostrar errores en el front
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("json", json);
-
-        Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                "sp_registrar_usuario",
-                "dbo",
-                params
-        );
-
-        List<Map<String, Object>> rs =
-                (List<Map<String, Object>>) result.get("#result-set-1");
-
-        if (rs == null || rs.isEmpty()) {
-            return "{\"ok\": false, \"mensaje\": \"Error al registrar usuario\"}";
-        }
-
-
-        try {
-            Object value = rs.get(0).values().iterator().next();
-            return value.toString();
-        } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"Error al parsear respuesta\"}";
-        }
-    }
-
+//listo
     public String insertarClienteMascotaAdmin(String json) {
 
         try {
@@ -162,7 +153,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String obtenerCategorias() {
 
         try {
@@ -177,25 +168,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Sin datos
             if (rs == null || rs.isEmpty()) {
-                return "{\"categorias\": []}";
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
             }
 
-            // 🔹 El SP devuelve JSON directo
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"categorias\": []}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarCategoria(String json) {
 
         try {
@@ -229,34 +216,36 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String obtenerProductos() {
 
-        MapSqlParameterSource params = new MapSqlParameterSource();
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
 
-        Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                "sp_get_productos_json",
-                "dbo",
-                params
-        );
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_productos_json",
+                    "dbo",
+                    params
+            );
 
-        List<Map<String, Object>> rs =
-                (List<Map<String, Object>>) result.get("#result-set-1");
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
 
-        if (rs == null || rs.isEmpty()) {
-            return "{\"productos\": []}";
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
+            }
+
+            Object value = rs.get(0).values().iterator().next();
+
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
-
-        // El SP ya devuelve JSON → lo sacamos directo
-        Object value = rs.get(0).values().iterator().next();
-
-        if (value == null) {
-            return "{\"productos\": []}";
-        }
-
-        return value.toString();
     }
-
+//listo
     public String insertarProducto(MultipartFile imagen, String productoJson) {
 
         try {
@@ -283,61 +272,20 @@ public class GriffonVetRepository {
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
             if (rs == null || rs.isEmpty()) {
-                return "{\"ok\": false, \"mensaje\": \"Error al procesar el producto\"}";
+                return "{\"success\": 0, \"mensaje\": \"Error al procesar el producto\"}";
             }
 
-            // 🔹 Convertir a JSON string
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(rs.get(0));
-
-        } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
-        }
-    }
-
-    public String actualizarProducto(MultipartFile imagen, String productoJson) {
-
-        try {
-            // 🔹 Parsear JSON
-            JsonObject json = JsonParser.parseString(productoJson).getAsJsonObject();
-
-            // 🔹 Si viene imagen, la subimos
-            if (imagen != null && !imagen.isEmpty()) {
-                String urlImagen = cloudinaryService.subirArchivo(imagen);
-                json.addProperty("imagen_url", urlImagen);
-            }
-
-            // 🔹 Ejecutar SP
-            MapSqlParameterSource params = new MapSqlParameterSource()
-                    .addValue("json", json.toString());
-
-            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                    "sp_update_producto_json",
-                    "dbo",
-                    params
-            );
-
-            List<Map<String, Object>> rs =
-                    (List<Map<String, Object>>) result.get("#result-set-1");
-
-            if (rs == null || rs.isEmpty()) {
-                return "{\"ok\": false, \"mensaje\": \"Error al actualizar producto\"}";
-            }
-
-            // 🔹 Si el SP ya devuelve JSON → lo devolvés directo
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"ok\": false, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String eliminarProducto(String json) {
 
         try {
@@ -371,7 +319,47 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
+//listo
+    public String actualizarProducto(MultipartFile imagen, String productoJson) {
 
+        try {
+            // 🔹 Parsear JSON
+            JsonObject json = JsonParser.parseString(productoJson).getAsJsonObject();
+
+            // 🔹 Si viene imagen, la subimos
+            if (imagen != null && !imagen.isEmpty()) {
+                String urlImagen = cloudinaryService.subirArchivo(imagen);
+                json.addProperty("imagen_url", urlImagen);
+            }
+
+            // 🔹 Ejecutar SP
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json.toString());
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_update_producto_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al actualizar producto\"}";
+            }
+
+            Object value = rs.get(0).values().iterator().next();
+
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+//listo
     public String obtenerMascotasPorUsuario(String json) {
 
         try {
@@ -405,41 +393,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
-    public String getMascota(String json) throws JsonProcessingException {
-
-        try {
-            MapSqlParameterSource params = new MapSqlParameterSource()
-                    .addValue("json", json);
-
-            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                    "sp_get_informacioncompleta_mascota",
-                    "dbo",
-                    params
-            );
-
-            List<Map<String, Object>> rs =
-                    (List<Map<String, Object>>) result.get("#result-set-1");
-
-            // 🔹 Sin datos
-            if (rs == null || rs.isEmpty()) {
-                return "{\"success\": 0, \"mensaje\": \"Sin datos\"}";
-            }
-
-            // 🔹 Si el SP ya devuelve JSON
-            String jsonResult = (String) rs.get(0).get("json");
-
-            if (jsonResult != null) {
-                return jsonResult;
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
-
-        } catch (Exception e) {
-            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
-        }
-    }
-
+//listo
     public String insertarMascota(String json) {
 
         try {
@@ -456,23 +410,20 @@ public class GriffonVetRepository {
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
             if (rs == null || rs.isEmpty()) {
-                return "{\"ok\": false, \"mensaje\": \"Error al registrar mascota\"}";
+                return "{\"success\": 0, \"mensaje\": \"Error al registrar mascota\"}";
             }
 
-            // 🔹 Si el SP devuelve JSON → lo usamos directo
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"ok\": false, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String obtenerClientesConMascotas(String json) {
 
         try {
@@ -488,25 +439,82 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Sin resultados
             if (rs == null || rs.isEmpty()) {
-                return "{\"clientes\": []}";
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
             }
 
-            // 🔹 El SP ya devuelve JSON
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"clientes\": []}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
+//listo
+    public String getClientes() throws JsonProcessingException {
 
+        try {
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_clientes_con_mascotas_json",
+                    "dbo",
+                    new MapSqlParameterSource()
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
+            }
+
+            Object value = rs.get(0).values().iterator().next();
+
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+//listo
+    public String getMascota(String json) throws JsonProcessingException {
+
+    try {
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("json", json);
+
+        Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                "sp_get_informacioncompleta_mascota",
+                "dbo",
+                params
+        );
+
+        List<Map<String, Object>> rs =
+                (List<Map<String, Object>>) result.get("#result-set-1");
+
+        // 🔹 Sin datos
+        if (rs == null || rs.isEmpty()) {
+            return "{\"success\": 0, \"mensaje\": \"Sin datos\"}";
+        }
+
+        // 🔹 Si el SP ya devuelve JSON
+        String jsonResult = (String) rs.get(0).get("json");
+
+        if (jsonResult != null) {
+            return jsonResult;
+        }
+
+        return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+    } catch (Exception e) {
+        return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+    }
+}
+//listo
     public String editarInfoGeneralMascota(String json) {
 
         try {
@@ -522,25 +530,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
-                return "{\"ok\": false, \"mensaje\": \"Error al actualizar mascota\"}";
+                return "{\"success\": 0, \"mensaje\": \"Error al actualizar mascota\"}";
             }
 
-            // 🔹 El SP devuelve JSON
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"ok\": false, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarConsultaClinica(String json, MultipartFile[] archivos) {
 
         try {
@@ -594,18 +598,20 @@ public class GriffonVetRepository {
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
             if (rs == null || rs.isEmpty()) {
-                return "{\"ok\": false, \"mensaje\": \"Error al registrar consulta\"}";
+                return "{\"success\": 0, \"mensaje\": \"Error al registrar consulta\"}";
             }
 
             Object value = rs.get(0).values().iterator().next();
 
-            return value != null ? value.toString() : "{\"ok\": false}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"" + e.getMessage() + "\"}";
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String actualizarConsultaClinica(String json, MultipartFile[] archivos) {
 
         try {
@@ -666,13 +672,45 @@ public class GriffonVetRepository {
 
             Object value = rs.get(0).values().iterator().next();
 
-            return value != null ? value.toString() : "{\"ok\": false}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"" + e.getMessage() + "\"}";
+            return "{\"success\": 0, \"mensaje\": \"" + e.getMessage() + "\"}";
         }
     }
+ //listo
+    public String eliminarConsulta(String json) {
 
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_delete_consulta_clinica_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del servidor\"}";
+            }
+
+            Object value = rs.get(0).values().iterator().next();
+
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+//listo
     public String obtenerMedicamentos() {
 
         try {
@@ -687,25 +725,22 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Sin datos
+
             if (rs == null || rs.isEmpty()) {
-                return "{\"medicamentos\": []}";
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
             }
 
-            // 🔹 El SP devuelve JSON
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"medicamentos\": []}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
-            return "{\"ok\": false, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarMedicamento(String json) {
 
         try {
@@ -721,25 +756,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
                 return "{\"success\": 0, \"mensaje\": \"Error al procesar medicamento\"}";
             }
 
-            // 🔹 El SP ya devuelve JSON completo
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarVacunacion(String json) {
 
         try {
@@ -755,25 +786,22 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
+
             if (rs == null || rs.isEmpty()) {
                 return "{\"success\": 0, \"mensaje\": \"Error al registrar vacunación\"}";
             }
 
-            // 🔹 El SP ya devuelve JSON completo
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String obtenerVacunas() {
 
         try {
@@ -788,25 +816,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Sin datos
             if (rs == null || rs.isEmpty()) {
-                return "{\"vacunas\": []}";
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
             }
 
-            // 🔹 El SP devuelve JSON directo
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"vacunas\": []}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarVacuna(String json) {
 
         try {
@@ -822,25 +846,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
                 return "{\"success\": 0, \"mensaje\": \"Error al procesar vacuna\"}";
             }
 
-            // 🔹 El SP ya devuelve JSON completo
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarDesparasitacion(String json) {
 
         try {
@@ -856,25 +876,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
                 return "{\"success\": 0, \"mensaje\": \"Error al registrar desparasitación\"}";
             }
 
-            // 🔹 El SP ya devuelve JSON completo
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String obtenerDesparasitaciones() {
 
         try {
@@ -889,25 +905,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Sin datos
             if (rs == null || rs.isEmpty()) {
-                return "{\"desparasitaciones\": []}";
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
             }
 
-            // 🔹 JSON directo del SP
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"desparasitaciones\": []}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarDesparasitacionCatalogo(String json) {
 
         try {
@@ -923,25 +935,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
                 return "{\"success\": 0, \"mensaje\": \"Error al procesar desparasitante\"}";
             }
 
-            // 🔹 JSON directo del SP
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarPeso(String json) {
 
         try {
@@ -963,18 +971,15 @@ public class GriffonVetRepository {
 
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
-            // 🔥 IMPORTANTE: acá caen los THROW del SQL
-            return "{\"success\": 0, \"mensaje\": \"" + e.getMessage() + "\"}";
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarEnfermedad(String json) {
 
         try {
@@ -990,25 +995,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
                 return "{\"success\": 0, \"mensaje\": \"Error al registrar enfermedad\"}";
             }
 
-            // 🔹 JSON directo del SP
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String obtenerEnfermedades() {
 
         try {
@@ -1023,25 +1024,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Sin datos
             if (rs == null || rs.isEmpty()) {
-                return "{\"enfermedades\": []}";
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
             }
 
-            // 🔹 JSON directo del SP
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"enfermedades\": []}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarEnfermedadCatalogo(String json) {
 
         try {
@@ -1057,25 +1054,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
                 return "{\"success\": 0, \"mensaje\": \"Error al procesar enfermedad\"}";
             }
 
-            // 🔹 JSON directo del SP
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarAlergia(String json) {
 
         try {
@@ -1091,25 +1084,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
                 return "{\"success\": 0, \"mensaje\": \"Error al registrar alergia\"}";
             }
 
-            // 🔹 JSON directo del SP
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String obtenerAlergias() {
 
         try {
@@ -1124,25 +1113,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Sin datos
             if (rs == null || rs.isEmpty()) {
-                return "{\"alergias\": []}";
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
             }
 
-            // 🔹 JSON directo del SP
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"alergias\": []}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarAlergiaCatalogo(String json) {
 
         try {
@@ -1158,25 +1143,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Error
             if (rs == null || rs.isEmpty()) {
                 return "{\"success\": 0, \"mensaje\": \"Error al procesar alergia\"}";
             }
 
-            // 🔹 JSON directo del SP
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String obtenerServicios() {
 
         try {
@@ -1191,25 +1172,21 @@ public class GriffonVetRepository {
             List<Map<String, Object>> rs =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            // 🔹 Sin datos
             if (rs == null || rs.isEmpty()) {
-                return "{\"servicios\": []}";
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
             }
 
-            // 🔹 JSON directo del SP (ya viene perfecto)
             Object value = rs.get(0).values().iterator().next();
 
-            if (value != null) {
-                return value.toString();
-            }
-
-            return "{\"servicios\": []}";
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
 
         } catch (Exception e) {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String insertarServicio(String json) {
 
         try {
@@ -1243,7 +1220,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String actualizarServicio(String json) {
 
         try {
@@ -1277,7 +1254,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String eliminarServicio(String json) {
 
         try {
@@ -1311,7 +1288,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-
+//listo
     public String obtenerServicioPorMascota(String json) {
 
         try {
@@ -1345,4 +1322,6 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
+
+
 }

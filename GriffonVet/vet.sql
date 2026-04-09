@@ -14,8 +14,8 @@
    DROP TABLES EN ORDEN CORRECTO
    Se eliminan primero las tablas hijas y al final las padres
    ========================================================= */
-
-IF OBJECT_ID('dbo.archivos_clinicos', 'U') IS NOT NULL DROP TABLE dbo.archivos_clinicos;
+--este esta listo para uso
+-- BORRAR IF OBJECT_ID('dbo.archivos_clinicos', 'U') IS NOT NULL DROP TABLE dbo.archivos_clinicos;
 IF OBJECT_ID('dbo.estudios_clinicos', 'U') IS NOT NULL DROP TABLE dbo.estudios_clinicos;
 IF OBJECT_ID('dbo.tratamientos', 'U') IS NOT NULL DROP TABLE dbo.tratamientos;
 
@@ -450,23 +450,23 @@ CREATE TABLE dbo.estudios_clinicos (
 );
 GO
 
--- =========================================================
+--BORRAR =========================================================
 -- TABLA: archivos_clinicos
 -- Permite guardar adjuntos relacionados a una consulta
 -- Ej: fotos, PDFs, radiografias, recetas escaneadas
 -- =========================================================
-CREATE TABLE dbo.archivos_clinicos (
-                                       id_archivo INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del archivo
-                                       id_consulta INT NOT NULL,-- Consulta a la que pertenece el archivo
-                                       url_archivo NVARCHAR(500) NOT NULL,-- Ruta o URL donde esta guardado el archivo
-                                       tipo_archivo NVARCHAR(50) NOT NULL, -- Tipo: IMAGEN, PDF, RADIOGRAFIA, etc.
-                                       descripcion NVARCHAR(500) NULL,-- Descripcion del archivo
-                                       fecha DATETIME NOT NULL DEFAULT GETDATE(),  -- Fecha de carga
+/*CREATE TABLE dbo.archivos_clinicos (
+    id_archivo INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del archivo
+    id_consulta INT NOT NULL,-- Consulta a la que pertenece el archivo
+    url_archivo NVARCHAR(500) NOT NULL,-- Ruta o URL donde esta guardado el archivo
+    tipo_archivo NVARCHAR(50) NOT NULL, -- Tipo: IMAGEN, PDF, RADIOGRAFIA, etc.
+    descripcion NVARCHAR(500) NULL,-- Descripcion del archivo
+    fecha DATETIME NOT NULL DEFAULT GETDATE(),  -- Fecha de carga
 
-                                       CONSTRAINT FK_archivos_clinicos_consultas
-                                           FOREIGN KEY (id_consulta) REFERENCES dbo.consultas_clinicas(id_consulta)
+    CONSTRAINT FK_archivos_clinicos_consultas
+        FOREIGN KEY (id_consulta) REFERENCES dbo.consultas_clinicas(id_consulta)
 );
-GO
+GO*/
 
 
 /* =========================================================
@@ -657,10 +657,10 @@ CREATE INDEX IX_estudios_clinicos_id_consulta
 ------------------------------------------------------------
 -- 📎 ARCHIVOS
 ------------------------------------------------------------
-
+/*BORRAR
 CREATE INDEX IX_archivos_clinicos_id_consulta
-    ON dbo.archivos_clinicos(id_consulta);
-
+ON dbo.archivos_clinicos(id_consulta);
+*/
 
 ------------------------------------------------------------
 -- ⛔ AGENDA BLOQUEOS
@@ -762,57 +762,42 @@ GO
 
 ================================================================================*/
 
-go--endpoint
+go--listo para su uso
 CREATE OR ALTER PROCEDURE dbo.sp_registrar_usuario
+    (
     @json NVARCHAR(MAX)
+    )
     AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@nombre NVARCHAR(100),
-        @apellido NVARCHAR(100),
-        @email NVARCHAR(150),
-        @telefono NVARCHAR(50),
-        @password NVARCHAR(255),
-        @password_hash VARBINARY(64);
+BEGIN TRY
+BEGIN TRAN;
 
-    -- 🔹 Parsear JSON
-SELECT
-    @nombre = JSON_VALUE(@json, '$.nombre'),
-    @apellido = JSON_VALUE(@json, '$.apellido'),
-    @email = JSON_VALUE(@json, '$.email'),
-    @telefono = JSON_VALUE(@json, '$.telefono'),
-    @password = JSON_VALUE(@json, '$.password');
+        DECLARE
+@nombre NVARCHAR(100) = JSON_VALUE(@json, '$.nombre'),
+            @apellido NVARCHAR(100) = JSON_VALUE(@json, '$.apellido'),
+            @email NVARCHAR(150) = JSON_VALUE(@json, '$.email'),
+            @telefono NVARCHAR(50) = JSON_VALUE(@json, '$.telefono'),
+            @password NVARCHAR(255) = JSON_VALUE(@json, '$.password'),
+            @password_hash VARBINARY(64);
 
--- 🔐 Hashear password
-SET @password_hash = HASHBYTES('SHA2_256', @password);
+        -- 🔒 VALIDACIONES
+        IF @email IS NULL OR @password IS NULL
+            THROW 50001, 'Email y contraseña son obligatorios', 1;
 
-    -- 🔹 Validación básica
-    IF @email IS NULL OR @password IS NULL
-BEGIN
-SELECT
-    0 AS success,
-    'Email y contraseña son obligatorios' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+        -- 🔒 VALIDAR FORMATO EMAIL (básico)
+        IF @email NOT LIKE '%@gmail.com' AND @email NOT LIKE '%@hotmail.com'
+            THROW 50002, 'Solo se permiten emails de Gmail o Hotmail', 1;
 
-    -- 🔹 Validar duplicado
-    IF EXISTS (
-        SELECT 1
-        FROM dbo.usuarios
-        WHERE email = @email
-    )
-BEGIN
-SELECT
-    0 AS success,
-    'El email ya está registrado' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+        -- 🔐 HASH
+        SET @password_hash = HASHBYTES('SHA2_256', @password);
 
-    -- 🔹 Insertar usuario
+        -- 🔒 DUPLICADO
+        IF EXISTS (SELECT 1 FROM dbo.usuarios WHERE email = @email)
+            THROW 50003, 'El email ya está registrado', 1;
+
+        -- 🔥 INSERT
 INSERT INTO dbo.usuarios (
     nombre,
     apellido,
@@ -829,14 +814,15 @@ VALUES (
            @email,
            @telefono,
            @password_hash,
-           'CLIENTE', -- 🔥 fijo
+           'CLIENTE',
            1,
            GETDATE()
        );
 
 DECLARE @id_usuario INT = SCOPE_IDENTITY();
 
-    -- ✅ Respuesta
+COMMIT;
+
 SELECT
     1 AS success,
     'Usuario registrado correctamente' AS mensaje,
@@ -854,52 +840,78 @@ SELECT
                 WHERE u.id_usuario = @id_usuario
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-        ) AS usuario
+            ) AS usuario
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+END CATCH
 END;
 GO
-go--endpointt
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_login_usuario_json
+    (
     @json         NVARCHAR(MAX),
     @login_valido INT OUTPUT,
     @rol          NVARCHAR(50) OUTPUT,
     @email_out    NVARCHAR(150) OUTPUT,
     @id_usuario   INT OUTPUT
+    )
     AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @email             NVARCHAR(150);
-    DECLARE @password          NVARCHAR(255);
-    DECLARE @password_hash_bin VARBINARY(64);
+BEGIN TRY
+
+        DECLARE @email NVARCHAR(150);
+        DECLARE @password NVARCHAR(255);
+        DECLARE @password_hash_bin VARBINARY(64);
 
 SELECT
     @email    = JSON_VALUE(@json, '$.email'),
     @password = JSON_VALUE(@json, '$.password');
 
-SET @password_hash_bin = HASHBYTES('SHA2_256', @password);
-
-SELECT @rol = rol, @email_out = email, @id_usuario = id_usuario
-FROM dbo.usuarios
-WHERE email         = @email
-  AND password_hash = @password_hash_bin
-  AND activo        = 1;
-
-IF @rol IS NOT NULL
-        SET @login_valido = 1;
-ELSE
+IF @email IS NULL OR @password IS NULL
 BEGIN
-        SET @login_valido = 0;
-        SET @rol          = NULL;
-        SET @email_out    = NULL;
-		SET @id_usuario   = NULL;
+            SET @login_valido = 0;
+            RETURN;
 END
 
+        SET @password_hash_bin = HASHBYTES('SHA2_256', @password);
+
+SELECT
+    @rol = rol,
+    @email_out = email,
+    @id_usuario = id_usuario
+FROM dbo.usuarios
+WHERE email = @email
+  AND password_hash = @password_hash_bin
+  AND activo = 1;
+
+IF @rol IS NOT NULL
+            SET @login_valido = 1;
+ELSE
+BEGIN
+            SET @login_valido = 0;
+            SET @rol = NULL;
+            SET @email_out = NULL;
+            SET @id_usuario = NULL;
+END
+
+END TRY
+BEGIN CATCH
+SET @login_valido = 0;
+END CATCH
 END;
 GO
 
-go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_cliente_mascota_json
     (
     @json NVARCHAR(MAX)
@@ -935,36 +947,21 @@ BEGIN TRAN;
 
         DECLARE @id_usuario INT;
 
-        -- 🔒 Validaciones
+        -- 🔒 VALIDACIONES
         IF @email IS NULL OR @password IS NULL
-BEGIN
-SELECT 0 AS success, 'Email y contraseña son obligatorios' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-ROLLBACK;
-RETURN;
-END
+            THROW 50001, 'Email y contraseña son obligatorios', 1;
 
         IF @nombre IS NULL OR @nombre = ''
-BEGIN
-SELECT 0 AS success, 'El nombre del cliente es obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-ROLLBACK;
-RETURN;
-END
+            THROW 50002, 'El nombre del cliente es obligatorio', 1;
 
-        -- 🔒 Email duplicado
         IF EXISTS (SELECT 1 FROM dbo.usuarios WHERE email = @email)
-BEGIN
-SELECT 0 AS success, 'El email ya está registrado' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-ROLLBACK;
-RETURN;
-END
+            THROW 50003, 'El email ya está registrado', 1;
 
-        -- 🔐 HASH PASSWORD
+        -- 🔐 HASH
         SET @password_hash = HASHBYTES('SHA2_256', @password);
 
-        -- 👤 INSERT CLIENTE
+
+		-- 👤 INSERT CLIENTE
 INSERT INTO dbo.usuarios
 (
     nombre,
@@ -1027,7 +1024,6 @@ END
 
 COMMIT;
 
--- ✅ RESPUESTA
 SELECT
     1 AS success,
     'Cliente y mascota creados correctamente' AS mensaje,
@@ -1047,21 +1043,21 @@ SELECT
                             m.nombre,
                             m.especie,
                             m.raza,
-                            m.castrado -- 👈 opcional: lo devuelvo
+                            m.castrado
                         FROM dbo.mascotas m
                         WHERE m.id_usuario = u.id_usuario
                 FOR JSON PATH
         ) AS mascotas
-                    FROM dbo.usuarios u
-                    WHERE u.id_usuario = @id_usuario
-                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-                )
-            ) AS data
+        FROM dbo.usuarios u
+        WHERE u.id_usuario = @id_usuario
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+    )
+) AS data
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY
 BEGIN CATCH
-ROLLBACK;
+IF @@TRANCOUNT > 0 ROLLBACK;
 
 SELECT
     0 AS success,
@@ -1076,20 +1072,42 @@ GO
 
 
 ================================================================================*/
-go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_categorias
     AS
 BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+
 SELECT
-    id_categoria,
-    nombre
-FROM dbo.categorias
-ORDER BY nombre
-    FOR JSON PATH;
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    id_categoria,
+                    nombre
+                FROM dbo.categorias
+                ORDER BY nombre
+                FOR JSON PATH
+        )
+            ) AS categorias
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
-go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_categoria_json
     (
     @json NVARCHAR(MAX)
@@ -1098,36 +1116,35 @@ CREATE OR ALTER PROCEDURE dbo.sp_insert_categoria_json
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@nombre NVARCHAR(150),
-        @nombre_normalizado NVARCHAR(150),
-        @id_categoria INT;
+BEGIN TRY
+BEGIN TRAN;
 
-    -- 🔹 Parsear JSON
+        DECLARE
+@nombre NVARCHAR(150),
+            @nombre_normalizado NVARCHAR(150),
+            @id_categoria INT;
+
+        -- 🔹 Parsear JSON
 SELECT
     @nombre = LTRIM(RTRIM(JSON_VALUE(@json, '$.nombre')));
 
 -- 🔒 Validación
 IF @nombre IS NULL OR @nombre = ''
-BEGIN
-SELECT
-    0 AS success,
-    'El nombre de la categoría es obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'El nombre de la categoría es obligatorio', 1;
 
-    -- 🔥 Normalización (evita duplicados tipo "Alimento" vs "alimento")
-    SET @nombre_normalizado = UPPER(@nombre);
+        -- 🔥 Normalización
+        SET @nombre_normalizado = UPPER(@nombre);
 
-    -- 🔍 Buscar si ya existe
+        -- 🔍 Buscar si ya existe
 SELECT @id_categoria = id_categoria
 FROM dbo.categorias
 WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
 
--- 🔁 Si ya existe → devolverla
+-- 🔁 Si ya existe
 IF @id_categoria IS NOT NULL
 BEGIN
+COMMIT;
+
 SELECT
     1 AS success,
     'La categoría ya existía' AS mensaje,
@@ -1140,19 +1157,21 @@ SELECT
                 WHERE id_categoria = @id_categoria
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-            ) AS categoria
+                ) AS categoria
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 RETURN;
 END
 
-    -- ➕ Insertar
+        -- ➕ Insertar
 INSERT INTO dbo.categorias (nombre)
 VALUES (@nombre_normalizado);
 
 SET @id_categoria = SCOPE_IDENTITY();
 
-    -- ✅ Respuesta
+COMMIT;
+
+-- ✅ Respuesta
 SELECT
     1 AS success,
     'Categoría creada correctamente' AS mensaje,
@@ -1165,45 +1184,79 @@ SELECT
                 WHERE id_categoria = @id_categoria
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-        ) AS categoria
+            ) AS categoria
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
-GO--endpoint
+GO--endpoint listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_productos_json
     AS
 BEGIN
     SET NOCOUNT ON;
 
+BEGIN TRY
+
 SELECT
-    p.id_producto,
-    p.nombre,
-    p.descripcion,
-    p.precio,
-    p.id_categoria,
-    c.nombre AS categoria,
-    p.imagen_url,
-    p.stock,
-    p.activo,
-    p.fecha_alta
-FROM dbo.productos p
-         INNER JOIN dbo.categorias c
-                    ON p.id_categoria = c.id_categoria
-WHERE p.activo = 1
-ORDER BY p.nombre
-    FOR JSON PATH, ROOT('productos');
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    p.id_producto,
+                    p.nombre,
+                    p.descripcion,
+                    p.precio,
+                    p.id_categoria,
+                    c.nombre AS categoria,
+                    p.imagen_url,
+                    p.stock,
+                    p.activo,
+                    p.fecha_alta
+                FROM dbo.productos p
+                         INNER JOIN dbo.categorias c
+                                    ON p.id_categoria = c.id_categoria
+                WHERE p.activo = 1
+                ORDER BY p.nombre
+                FOR JSON PATH
+        )
+            ) AS productos
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
-GO--endpoint
+GO--endpoint listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_producto_json
     @json NVARCHAR(MAX)
     AS
 BEGIN
     SET NOCOUNT ON;
+
 BEGIN TRY
+BEGIN TRAN;
+
         DECLARE
 @nombre      NVARCHAR(200),
             @descripcion NVARCHAR(MAX),
@@ -1223,29 +1276,25 @@ SELECT
 
 -- Validaciones
 IF @nombre IS NULL OR @precio IS NULL OR @id_categoria IS NULL
-BEGIN
-SELECT 0 AS success, 'Faltan datos obligatorios' AS mensaje  -- ✅ alias agregado
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'Faltan datos obligatorios', 1;
 
         -- Validar categoría
         IF NOT EXISTS (
             SELECT 1 FROM dbo.categorias WHERE id_categoria = @id_categoria
         )
-BEGIN
-SELECT 0 AS success, 'La categoría no existe' AS mensaje  -- ✅ alias agregado
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50002, 'La categoría no existe', 1;
 
         -- Insert
-INSERT INTO dbo.productos (nombre, descripcion, precio, id_categoria, imagen_url, stock, activo, fecha_alta)
-VALUES (@nombre, @descripcion, @precio, @id_categoria, @imagen_url, @stock, 1, GETDATE());
+INSERT INTO dbo.productos
+(nombre, descripcion, precio, id_categoria, imagen_url, stock, activo, fecha_alta)
+VALUES
+    (@nombre, @descripcion, @precio, @id_categoria, @imagen_url, @stock, 1, GETDATE());
 
 DECLARE @id_producto INT = SCOPE_IDENTITY();
 
-        -- Respuesta con JOIN
+COMMIT;
+
+-- Respuesta con JOIN
 SELECT
     1 AS success,
     'Producto creado correctamente' AS mensaje,
@@ -1254,7 +1303,8 @@ SELECT
                        p.*,
                        c.nombre AS categoria
                    FROM dbo.productos p
-                            INNER JOIN dbo.categorias c ON p.id_categoria = c.id_categoria
+                            INNER JOIN dbo.categorias c
+                                       ON p.id_categoria = c.id_categoria
                    WHERE p.id_producto = @id_producto
                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )) AS producto
@@ -1262,66 +1312,85 @@ SELECT
 
 END TRY
 BEGIN CATCH
-SELECT 0 AS success, ERROR_MESSAGE() AS mensaje
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END CATCH
 END;
 GO
 
+go --listo
 CREATE OR ALTER PROCEDURE dbo.sp_delete_producto_json
     @json NVARCHAR(MAX)
     AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @id_producto INT = TRY_CAST(JSON_VALUE(@json, '$.id_producto') AS INT);
+BEGIN TRY
+BEGIN TRAN;
 
-    IF @id_producto IS NULL
-BEGIN
-SELECT 0 AS success, 'id_producto es obligatorio'  AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+        DECLARE @id_producto INT = TRY_CAST(JSON_VALUE(@json, '$.id_producto') AS INT);
 
+        IF @id_producto IS NULL
+            THROW 50001, 'id_producto es obligatorio', 1;
 
-    IF NOT EXISTS (
-        SELECT 1
-        FROM dbo.productos
-        WHERE id_producto = @id_producto
-    )
-BEGIN
-SELECT 0 AS success, 'El producto no existe'  AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.productos
+            WHERE id_producto = @id_producto
+        )
+            THROW 50002, 'El producto no existe', 1;
 
 UPDATE dbo.productos
 SET activo = 0
 WHERE id_producto = @id_producto;
 
-SELECT 1 AS success, 'Producto eliminado correctamente'  AS mensaje
+COMMIT;
+
+SELECT
+    1 AS success,
+    'Producto eliminado correctamente' AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
-go
-GO--endpoint
+GO--endpoint listo
 CREATE OR ALTER PROCEDURE dbo.sp_update_producto_json
     @json NVARCHAR(MAX)
     AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@id_producto INT,
-        @nombre NVARCHAR(200),
-        @descripcion NVARCHAR(MAX),
-        @precio DECIMAL(10,2),
-        @id_categoria INT,
-        @imagen_url NVARCHAR(500),
-        @stock INT;
+BEGIN TRY
+BEGIN TRAN;
 
-    -- 🔹 Parsear JSON
+        DECLARE
+@id_producto INT,
+            @nombre NVARCHAR(200),
+            @descripcion NVARCHAR(MAX),
+            @precio DECIMAL(10,2),
+            @id_categoria INT,
+            @imagen_url NVARCHAR(500),
+            @stock INT;
+
+        -- 🔹 Parsear JSON
 SELECT
     @id_producto = CAST(JSON_VALUE(@json, '$.id_producto') AS INT),
     @nombre = JSON_VALUE(@json, '$.nombre'),
@@ -1333,23 +1402,15 @@ SELECT
 
 -- 🔒 Validar producto
 IF NOT EXISTS (SELECT 1 FROM dbo.productos WHERE id_producto = @id_producto)
-BEGIN
-SELECT 0 AS success, 'Producto no existe'  AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'Producto no existe', 1;
 
-    -- 🔒 Validar categoría (si viene)
-    IF @id_categoria IS NOT NULL AND NOT EXISTS (
-        SELECT 1 FROM dbo.categorias WHERE id_categoria = @id_categoria
-    )
-BEGIN
-SELECT 0 AS success, 'La categoría no existe'  AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+        -- 🔒 Validar categoría (si viene)
+        IF @id_categoria IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM dbo.categorias WHERE id_categoria = @id_categoria
+        )
+            THROW 50002, 'La categoría no existe', 1;
 
-    -- 🔹 Update
+        -- 🔹 Update
 UPDATE dbo.productos
 SET
     nombre = ISNULL(@nombre, nombre),
@@ -1359,6 +1420,8 @@ SET
     imagen_url = ISNULL(@imagen_url, imagen_url),
     stock = ISNULL(@stock, stock)
 WHERE id_producto = @id_producto;
+
+COMMIT;
 
 -- 🔹 Respuesta
 SELECT
@@ -1376,6 +1439,17 @@ SELECT
         )) AS producto
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 /*
@@ -1412,32 +1486,29 @@ go
 
 
 ================================================================================*/
-GO--endpoint  (vista usuario)
+GO--endpoint  (vista usuario) listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_mascotas_por_usuario_json
     @json NVARCHAR(MAX)
     AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @id_usuario INT;
+BEGIN TRY
 
-    -- 🔹 Parsear JSON
+        DECLARE @id_usuario INT;
+
+        -- 🔹 Parsear JSON
 SELECT
     @id_usuario = CAST(JSON_VALUE(@json, '$.id_usuario') AS INT);
 
 -- 🔹 Validación básica
 IF @id_usuario IS NULL
-BEGIN
-SELECT
-    0 AS success,
-    'id_usuario es obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'id_usuario es obligatorio', 1;
 
-    -- 🔹 Query principal
+        -- 🔹 Query principal
 SELECT
     1 AS success,
+    'OK' AS mensaje,
     JSON_QUERY(
             (
                 SELECT
@@ -1458,39 +1529,49 @@ SELECT
                 ORDER BY m.nombre
                 FOR JSON PATH
         )
-        ) AS mascotas
+            ) AS mascotas
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 --en el detalle llamar a este sp: dbo.sp_get_informacioncompleta_mascota
 --para editar la mascota le permitimos usar el sp: dbo.sp_editar_infogeneral_mascota
 go
 
-GO--endpoint
+GO--endpoint listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_mascota_json
     @json NVARCHAR(MAX)
     AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE
 @id_usuario INT,
-        @nombre NVARCHAR(100),
-        @especie NVARCHAR(50),
-        @raza NVARCHAR(100),
-        @tamanio NVARCHAR(50),
-        @fecha_nacimiento DATE,
-        @sexo NVARCHAR(20),
-        @tipo_pelaje NVARCHAR(50),
-        @alergias_general NVARCHAR(MAX),
-        @comportamiento NVARCHAR(MAX),
-        @observaciones NVARCHAR(MAX),
+            @nombre NVARCHAR(100),
+            @especie NVARCHAR(50),
+            @raza NVARCHAR(100),
+            @tamanio NVARCHAR(50),
+            @fecha_nacimiento DATE,
+            @sexo NVARCHAR(20),
+            @tipo_pelaje NVARCHAR(50),
+            @alergias_general NVARCHAR(MAX),
+            @comportamiento NVARCHAR(MAX),
+            @observaciones NVARCHAR(MAX),
+            @castrado BIT;
 
-        -- 🆕 NUEVO
-        @castrado BIT;
-
-    -- 🔹 Parsear JSON
+        -- 🔹 Parsear JSON
 SELECT
     @id_usuario = CAST(JSON_VALUE(@json, '$.id_usuario') AS INT),
     @nombre = JSON_VALUE(@json, '$.nombre'),
@@ -1503,21 +1584,13 @@ SELECT
     @alergias_general = JSON_VALUE(@json, '$.alergias_general'),
     @comportamiento = JSON_VALUE(@json, '$.comportamiento'),
     @observaciones = JSON_VALUE(@json, '$.observaciones'),
-
-    -- 🆕 NUEVO (con default 0)
     @castrado = ISNULL(TRY_CAST(JSON_VALUE(@json, '$.castrado') AS BIT), 0);
 
 -- 🔹 Validaciones mínimas
 IF @id_usuario IS NULL OR @nombre IS NULL OR @especie IS NULL
-BEGIN
-SELECT
-    0 AS success,
-    'id_usuario, nombre y especie son obligatorios' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'id_usuario, nombre y especie son obligatorios', 1;
 
-    -- 🔹 Insertar
+        -- 🔹 Insertar
 INSERT INTO dbo.mascotas (
     id_usuario,
     nombre,
@@ -1530,7 +1603,7 @@ INSERT INTO dbo.mascotas (
     alergias_general,
     comportamiento,
     observaciones,
-    castrado, -- 👈 NUEVO
+    castrado,
     activo,
     fecha_registro
 )
@@ -1546,14 +1619,16 @@ VALUES (
            @alergias_general,
            @comportamiento,
            @observaciones,
-           @castrado, -- 👈 NUEVO
+           @castrado,
            1,
            GETDATE()
        );
 
 DECLARE @id_mascota INT = SCOPE_IDENTITY();
 
-    -- ✅ Respuesta
+COMMIT;
+
+-- ✅ Respuesta
 SELECT
     1 AS success,
     'Mascota registrada correctamente' AS mensaje,
@@ -1567,14 +1642,25 @@ SELECT
                     m.tamanio,
                     m.fecha_nacimiento,
                     m.sexo,
-                    m.castrado -- 👈 opcional (te lo dejo)
+                    m.castrado
                 FROM dbo.mascotas m
                 WHERE m.id_mascota = @id_mascota
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-        ) AS mascota
+            ) AS mascota
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
@@ -1586,110 +1672,144 @@ GO
 ================================================================================*/
 
 go
-GO--endpoint
+GO--endpoint listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_clientes_con_mascotas_json_filtrado
     @json NVARCHAR(MAX)
     AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @apellido NVARCHAR(100);
+BEGIN TRY
 
-    -- 🔹 Parsear JSON
+        DECLARE @apellido NVARCHAR(100);
+
+        -- 🔹 Parsear JSON
 SELECT
     @apellido = JSON_VALUE(@json, '$.apellido');
 
 SELECT
-    u.id_usuario,
-    u.nombre,
-    u.apellido,
-    (u.nombre + ' ' + u.apellido) AS nombre_completo,
-    u.email,
-    u.telefono,
-    u.activo,
-    u.fecha_alta,
-
+    1 AS success,
+    'OK' AS mensaje,
     JSON_QUERY(
             (
                 SELECT
-                    m.id_mascota,
-                    m.nombre AS nombre_mascota,
-                    m.especie,
-                    m.raza,
-                    m.tamanio,
-                    m.fecha_nacimiento,
-                    m.sexo,
-                    m.tipo_pelaje,
-                    m.alergias_general,
-                    m.comportamiento,
-                    m.observaciones,
-                    m.activo,
-                    m.fecha_registro,
-                    m.castrado
-                FROM dbo.mascotas m
-                WHERE m.id_usuario = u.id_usuario
-                  AND m.activo = 1
-                ORDER BY m.nombre
+                    u.id_usuario,
+                    u.nombre,
+                    u.apellido,
+                    (u.nombre + ' ' + u.apellido) AS nombre_completo,
+                    u.email,
+                    u.telefono,
+                    u.activo,
+                    u.fecha_alta,
+
+                    JSON_QUERY(
+                            (
+                                SELECT
+                                    m.id_mascota,
+                                    m.nombre AS nombre_mascota,
+                                    m.especie,
+                                    m.raza,
+                                    m.tamanio,
+                                    m.fecha_nacimiento,
+                                    m.sexo,
+                                    m.tipo_pelaje,
+                                    m.alergias_general,
+                                    m.comportamiento,
+                                    m.observaciones,
+                                    m.activo,
+                                    m.fecha_registro,
+                                    m.castrado
+                                FROM dbo.mascotas m
+                                WHERE m.id_usuario = u.id_usuario
+                                  AND m.activo = 1
+                                ORDER BY m.nombre
+                                FOR JSON PATH
+                        )
+                        ) AS mascotas
+
+                FROM dbo.usuarios u
+                WHERE u.rol = 'CLIENTE'
+                  AND u.activo = 1
+                  AND (
+                    @apellido IS NULL
+                        OR LTRIM(RTRIM(@apellido)) = ''
+                        OR u.apellido COLLATE Latin1_General_CI_AI LIKE '%' + @apellido + '%'
+                    )
+                ORDER BY u.apellido, u.nombre
                 FOR JSON PATH
         )
-        ) AS mascotas
+            ) AS clientes
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
-FROM dbo.usuarios u
-WHERE u.rol = 'CLIENTE'
-  AND u.activo = 1
-  AND (
-    @apellido IS NULL
-        OR LTRIM(RTRIM(@apellido)) = ''
-        OR u.apellido COLLATE Latin1_General_CI_AI LIKE '%' + @apellido + '%'
-    )
-ORDER BY u.apellido, u.nombre
-    FOR JSON PATH, ROOT('clientes');
+END TRY
+BEGIN CATCH
 
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
 
 --EXEC dbo.sp_get_clientes_con_mascotas_json;
-go--endpointt(vista admin)
+go--endpointt(vista admin)listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_clientes_con_mascotas_json
     AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @result NVARCHAR(MAX);
+BEGIN TRY
 
-    SET @result = (
-        SELECT
-            u.id_usuario,
-            (u.nombre + ' ' + u.apellido) AS nombre_completo,
-            u.email,
-            u.telefono,
-            u.activo,
+        DECLARE @result NVARCHAR(MAX);
 
-            JSON_QUERY(
-                (
-                    SELECT
-                        m.id_mascota,
-                        m.nombre AS nombre_mascota,
-                        m.especie,
-                        m.sexo
-                    FROM dbo.mascotas m
-                    WHERE m.id_usuario = u.id_usuario
-                      AND m.activo = 1
-                    ORDER BY m.nombre
-                    FOR JSON PATH
-                )
-            ) AS mascotas
+        SET @result = (
+            SELECT
+                u.id_usuario,
+                (u.nombre + ' ' + u.apellido) AS nombre_completo,
+                u.email,
+                u.telefono,
+                u.activo,
 
-        FROM dbo.usuarios u
-        WHERE u.rol = 'CLIENTE'
-          AND u.activo = 1
-        ORDER BY u.apellido, u.nombre
-        FOR JSON PATH, ROOT('clientes')
-    );
+                JSON_QUERY(
+                    (
+                        SELECT
+                            m.id_mascota,
+                            m.nombre AS nombre_mascota,
+                            m.especie,
+                            m.sexo
+                        FROM dbo.mascotas m
+                        WHERE m.id_usuario = u.id_usuario
+                          AND m.activo = 1
+                        ORDER BY m.nombre
+                        FOR JSON PATH
+                    )
+                ) AS mascotas
 
-    -- 🔥 CLAVE
-SELECT @result AS json;
+            FROM dbo.usuarios u
+            WHERE u.rol = 'CLIENTE'
+              AND u.activo = 1
+            ORDER BY u.apellido, u.nombre
+            FOR JSON PATH
+        );
+
+SELECT
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(@result) AS clientes
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
@@ -1697,7 +1817,9 @@ GO
 --DECLARE @json NVARCHAR(MAX) = '{ "id_usuario": 1,"id_mascota": 1}';
 --EXEC dbo.sp_get_informacioncompleta_mascota @json;
 
-go--endpointt  (esto es para la vista admin, aca esta toda la info)
+go
+
+go--endpointt  (esto es para la vista admin, aca esta toda la info) listo es un endpoin no modificado porque al ser grande se rompe todo si estandarizo
 CREATE OR ALTER PROCEDURE dbo.sp_get_informacioncompleta_mascota
     (
     @json NVARCHAR(MAX)
@@ -1815,15 +1937,15 @@ END
                                 FROM dbo.estudios_clinicos e
                                 WHERE e.id_consulta = c.id_consulta
                                 FOR JSON PATH
-                            )) AS estudios,
+                            )) AS estudios/*,
 
-                            -- 📎 ARCHIVOS
+                            borrar-- 📎 ARCHIVOS
                             JSON_QUERY((
                                 SELECT url_archivo, tipo_archivo, descripcion
                                 FROM dbo.archivos_clinicos a
                                 WHERE a.id_consulta = c.id_consulta
                                 FOR JSON PATH
-                            )) AS archivos
+                            )) AS archivos*/
 
                         FROM dbo.consultas_clinicas c
                         WHERE c.id_historia_clinica = hc.id_historia_clinica
@@ -1846,11 +1968,11 @@ END
 SELECT @result AS json;
 END;
 GO
-
+go
 --DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1,  "comportamiento": "MUY ACTIVO",  "observaciones": "Mejoró después del tratamiento"}';
 --EXEC dbo.sp_editar_infogeneral_mascota @json;
 --procedimiento para editar informacion general del paciente
-go--endpoint
+go--endpoint listo
 CREATE OR ALTER PROCEDURE dbo.sp_editar_infogeneral_mascota
     (
     @json NVARCHAR(MAX)
@@ -1859,22 +1981,23 @@ CREATE OR ALTER PROCEDURE dbo.sp_editar_infogeneral_mascota
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@id_usuario INT,
-        @id_mascota INT,
-        @nombre NVARCHAR(100),
-        @especie NVARCHAR(50),
-        @raza NVARCHAR(100),
-        @tamanio NVARCHAR(20),
-        @fecha_nacimiento DATE,
-        @sexo NVARCHAR(20),
-        @tipo_pelaje NVARCHAR(100),
-        @alergias_general NVARCHAR(500),
-        @comportamiento NVARCHAR(300),
-        @observaciones NVARCHAR(1000),
+BEGIN TRY
+BEGIN TRAN;
 
-        -- 🆕 NUEVO
-        @castrado BIT;
+        DECLARE
+@id_usuario INT,
+            @id_mascota INT,
+            @nombre NVARCHAR(100),
+            @especie NVARCHAR(50),
+            @raza NVARCHAR(100),
+            @tamanio NVARCHAR(20),
+            @fecha_nacimiento DATE,
+            @sexo NVARCHAR(20),
+            @tipo_pelaje NVARCHAR(100),
+            @alergias_general NVARCHAR(500),
+            @comportamiento NVARCHAR(300),
+            @observaciones NVARCHAR(1000),
+            @castrado BIT;
 
 SELECT
     @id_usuario = TRY_CAST(JSON_VALUE(@json, '$.id_usuario') AS INT),
@@ -1888,30 +2011,21 @@ SELECT
     @alergias_general = JSON_VALUE(@json, '$.alergias_general'),
     @comportamiento = JSON_VALUE(@json, '$.comportamiento'),
     @observaciones = JSON_VALUE(@json, '$.observaciones'),
-
-    -- 🆕 NUEVO (solo se actualiza si viene)
     @castrado = TRY_CAST(JSON_VALUE(@json, '$.castrado') AS BIT);
 
--- 🔥 CLAVE
 SET @fecha_nacimiento = TRY_CONVERT(DATE, JSON_VALUE(@json, '$.fecha_nacimiento'));
 
-    -- 🔒 Validación
-    IF NOT EXISTS (
-        SELECT 1
-        FROM dbo.mascotas
-        WHERE id_mascota = @id_mascota
-          AND id_usuario = @id_usuario
-          AND activo = 1
-    )
-BEGIN
-SELECT
-    0 AS success,
-    'Mascota no encontrada o no pertenece al usuario' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+        -- 🔒 Validación
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.mascotas
+            WHERE id_mascota = @id_mascota
+              AND id_usuario = @id_usuario
+              AND activo = 1
+        )
+            THROW 50001, 'Mascota no encontrada o no pertenece al usuario', 1;
 
-    -- 🛠 UPDATE dinámico
+        -- 🛠 UPDATE
 UPDATE dbo.mascotas
 SET
     nombre = ISNULL(@nombre, nombre),
@@ -1924,18 +2038,36 @@ SET
     alergias_general = ISNULL(@alergias_general, alergias_general),
     comportamiento = ISNULL(@comportamiento, comportamiento),
     observaciones = ISNULL(@observaciones, observaciones),
-
-    -- 🆕 NUEVO (clave)
     castrado = ISNULL(@castrado, castrado)
-
 WHERE id_mascota = @id_mascota;
 
--- 📦 Respuesta
-SELECT *
-FROM dbo.mascotas
-WHERE id_mascota = @id_mascota
-    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+COMMIT;
 
+-- 📦 Respuesta estándar
+SELECT
+    1 AS success,
+    'Mascota actualizada correctamente' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT *
+                FROM dbo.mascotas
+                WHERE id_mascota = @id_mascota
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+            ) AS mascota
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
@@ -1945,7 +2077,7 @@ GO
 
 
 --obligatorio lo de la tabla consulta_clinica, las otras 3 trablas pueden o no estar con datos
-go--endpoint
+go--endpoint listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_consulta_clinica_json
     (
     @json NVARCHAR(MAX)
@@ -2097,24 +2229,25 @@ WHERE JSON_VALUE(value, '$.tipo_estudio') IS NOT NULL;
 END
 
         -- 📎 ARCHIVOS
-        IF EXISTS (SELECT 1 FROM OPENJSON(@json, '$.archivos'))
-BEGIN
-INSERT INTO dbo.archivos_clinicos
-(id_consulta, url_archivo, tipo_archivo, descripcion)
-SELECT
-    @id_consulta,
-    JSON_VALUE(value, '$.url_archivo'),
-    JSON_VALUE(value, '$.tipo_archivo'),
-    JSON_VALUE(value, '$.descripcion')
-FROM OPENJSON(@json, '$.archivos')
-WHERE JSON_VALUE(value, '$.url_archivo') IS NOT NULL;
-END
+       /* BORRAR IF EXISTS (SELECT 1 FROM OPENJSON(@json, '$.archivos'))
+        BEGIN
+            INSERT INTO dbo.archivos_clinicos
+            (id_consulta, url_archivo, tipo_archivo, descripcion)
+            SELECT
+                @id_consulta,
+                JSON_VALUE(value, '$.url_archivo'),
+                JSON_VALUE(value, '$.tipo_archivo'),
+                JSON_VALUE(value, '$.descripcion')
+            FROM OPENJSON(@json, '$.archivos')
+            WHERE JSON_VALUE(value, '$.url_archivo') IS NOT NULL;
+        END*/
 
 COMMIT;
 
 SELECT
-    @id_consulta AS id_consulta,
-    'OK' AS status
+    1 AS success,
+    'Consulta registrada correctamente' AS mensaje,
+    @id_consulta AS id_consulta
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY
@@ -2190,6 +2323,7 @@ ORDER BY c.id_consulta DESC;
 */
 go
 
+--este esta listo para uso
 CREATE OR ALTER PROCEDURE dbo.sp_update_consulta_clinica_json
     (
     @json NVARCHAR(MAX)
@@ -2214,22 +2348,14 @@ BEGIN TRAN;
         ---------------------------------------------------
         -- VALIDACIONES
         ---------------------------------------------------
+-- VALIDACIONES
+    IF @id_consulta IS NULL
+        THROW 50001, 'id_consulta obligatorio', 1;
 
-        IF @id_consulta IS NULL
-BEGIN
-SELECT 0 AS success, 'id_consulta obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
-
-        IF NOT EXISTS (
-            SELECT 1 FROM dbo.consultas_clinicas WHERE id_consulta = @id_consulta
-        )
-BEGIN
-SELECT 0 AS success, 'La consulta no existe' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.consultas_clinicas WHERE id_consulta = @id_consulta
+    )
+        THROW 50002, 'La consulta no existe', 1;
 
         ---------------------------------------------------
         -- UPDATE CONSULTA
@@ -2282,16 +2408,108 @@ END
 
 COMMIT;
 
+SELECT 1 AS success, 'Consulta actualizada correctamente' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT 0 AS success, ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+END CATCH
+END;
+GO
+
+go
+CREATE OR ALTER PROCEDURE dbo.sp_delete_consulta_clinica_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE @id_consulta INT = TRY_CAST(JSON_VALUE(@json, '$.id_consulta') AS INT);
+
+        -- 🔒 VALIDACIÓN
+        IF @id_consulta IS NULL
+            THROW 50001, 'id_consulta es obligatorio', 1;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM consultas_clinicas WHERE id_consulta = @id_consulta
+        )
+            THROW 50002, 'La consulta no existe', 1;
+
+        -- 🔥 BORRAR HIJOS PRIMERO
+DELETE FROM tratamientos
+WHERE id_consulta = @id_consulta;
+
+DELETE FROM estudios_clinicos
+WHERE id_consulta = @id_consulta;
+
+-- DELETE FROM archivos_clinicos (si lo usás en el futuro)
+
+-- 🧨 BORRAR PADRE
+DELETE FROM consultas_clinicas
+WHERE id_consulta = @id_consulta;
+
+COMMIT;
+
 SELECT
     1 AS success,
-    'Consulta actualizada correctamente' AS mensaje
+    'Consulta eliminada correctamente' AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY
 BEGIN CATCH
 
-IF @@TRANCOUNT > 0
-            ROLLBACK;
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
+END
+GO
+
+/*============================================================================0
+  procedimientos de administrar medicamentos
+================================================================================*/
+go
+
+
+--para el selector del formulario
+go--listo
+CREATE OR ALTER PROCEDURE dbo.sp_get_medicamentos
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+
+SELECT
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    id_medicamento,
+                    nombre
+                FROM dbo.medicamentos
+                ORDER BY nombre
+                FOR JSON PATH
+        )
+            ) AS medicamentos
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
 
 SELECT
     0 AS success,
@@ -2301,25 +2519,8 @@ SELECT
 END CATCH
 END;
 GO
-/*============================================================================0
-  procedimientos de administrar medicamentos
-================================================================================*/
-go
---para el selector del formulario
-CREATE OR ALTER PROCEDURE dbo.sp_get_medicamentos
-    AS
-BEGIN
-    SET NOCOUNT ON;
-
-SELECT
-    id_medicamento,
-    nombre
-FROM dbo.medicamentos
-ORDER BY nombre
-    FOR JSON PATH;
-END;
-GO
 --para la creacion de uno nuevo
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_medicamento
     (
     @json NVARCHAR(MAX)
@@ -2328,36 +2529,35 @@ CREATE OR ALTER PROCEDURE dbo.sp_insert_medicamento
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@nombre NVARCHAR(150),
-        @nombre_normalizado NVARCHAR(150),
-        @id_medicamento INT;
+BEGIN TRY
+BEGIN TRAN;
 
-    -- 🔹 Parsear JSON
+        DECLARE
+@nombre NVARCHAR(150),
+            @nombre_normalizado NVARCHAR(150),
+            @id_medicamento INT;
+
+        -- 🔹 Parsear JSON
 SELECT
     @nombre = LTRIM(RTRIM(JSON_VALUE(@json, '$.nombre')));
 
--- 🔹 Validación
+-- 🔒 Validación
 IF @nombre IS NULL OR @nombre = ''
-BEGIN
-SELECT
-    0 AS success,
-    'El nombre del medicamento es obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'El nombre del medicamento es obligatorio', 1;
 
-    -- 🔥 Normalización (clave)
-    SET @nombre_normalizado = UPPER(LTRIM(RTRIM(@nombre)));
+        -- 🔥 Normalización
+        SET @nombre_normalizado = UPPER(LTRIM(RTRIM(@nombre)));
 
-    -- 🔹 Buscar si ya existe (case insensitive)
+        -- 🔹 Buscar duplicado
 SELECT @id_medicamento = id_medicamento
 FROM dbo.medicamentos
 WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
 
--- 🔥 SI EXISTE → devolverlo
+-- 🔁 Si existe → devolverlo
 IF @id_medicamento IS NOT NULL
 BEGIN
+COMMIT;
+
 SELECT
     1 AS success,
     'El medicamento ya existía' AS mensaje,
@@ -2370,19 +2570,21 @@ SELECT
                 WHERE id_medicamento = @id_medicamento
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-            ) AS medicamento
+                ) AS medicamento
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 RETURN;
 END
 
-    -- 🔹 Insertar (guardado limpio)
+        -- ➕ Insertar
 INSERT INTO dbo.medicamentos (nombre)
 VALUES (@nombre_normalizado);
 
 SET @id_medicamento = SCOPE_IDENTITY();
 
-    -- 🔹 Respuesta
+COMMIT;
+
+-- ✅ Respuesta
 SELECT
     1 AS success,
     'Medicamento creado correctamente' AS mensaje,
@@ -2395,9 +2597,20 @@ SELECT
                 WHERE id_medicamento = @id_medicamento
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-        ) AS medicamento
+            ) AS medicamento
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
@@ -2406,6 +2619,8 @@ GO
 ================================================================================*/
 --DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1, "id_mascota": 1,  "id_vacuna": 1,  "fecha_aplicacion": "2025-03-15",  "proxima_dosis": "2026-03-15",  "observaciones": "Sin reacción post-vacunal"}';
 --EXEC dbo.sp_insert_vacunacion_json @json;
+go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_vacunacion_json
     (
     @json NVARCHAR(MAX)
@@ -2437,16 +2652,7 @@ BEGIN TRAN;
               AND id_usuario = @id_usuario
               AND activo = 1
         )
-BEGIN
-ROLLBACK;
-
-SELECT
-    0 AS success,
-    'La mascota no pertenece al usuario' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
+            THROW 50001, 'La mascota no pertenece al usuario', 1;
 
         -- 🔒 VALIDACIÓN VACUNA
         IF NOT EXISTS (
@@ -2454,16 +2660,7 @@ END
             FROM dbo.vacunas
             WHERE id_vacuna = @id_vacuna
         )
-BEGIN
-ROLLBACK;
-
-SELECT
-    0 AS success,
-    'La vacuna no existe' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
+            THROW 50002, 'La vacuna no existe', 1;
 
         -- 💉 INSERTAR VACUNACIÓN
 INSERT INTO dbo.vacunas_mascota
@@ -2502,30 +2699,51 @@ SELECT
 
 END TRY
 BEGIN CATCH
-IF @@TRANCOUNT > 0
-            ROLLBACK;
+
+IF @@TRANCOUNT > 0 ROLLBACK;
 
 SELECT
     0 AS success,
     ERROR_MESSAGE() AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END CATCH
 END;
 GO
-
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_vacunas
     AS
 BEGIN
     SET NOCOUNT ON;
 
+BEGIN TRY
+
 SELECT
-    id_vacuna,
-    nombre
-FROM dbo.vacunas
-ORDER BY nombre
-    FOR JSON PATH;
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    id_vacuna,
+                    nombre
+                FROM dbo.vacunas
+                ORDER BY nombre
+                FOR JSON PATH
+        )
+            ) AS vacunas
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
-GO
+GO--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_vacuna_json
     (
     @json NVARCHAR(MAX)
@@ -2534,36 +2752,35 @@ CREATE OR ALTER PROCEDURE dbo.sp_insert_vacuna_json
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@nombre NVARCHAR(150),
-        @nombre_normalizado NVARCHAR(150),
-        @id_vacuna INT;
+BEGIN TRY
+BEGIN TRAN;
 
-    -- 🔹 Parsear JSON
+        DECLARE
+@nombre NVARCHAR(150),
+            @nombre_normalizado NVARCHAR(150),
+            @id_vacuna INT;
+
+        -- 🔹 Parsear JSON
 SELECT
     @nombre = LTRIM(RTRIM(JSON_VALUE(@json, '$.nombre')));
 
--- 🔹 Validación
+-- 🔒 Validación
 IF @nombre IS NULL OR @nombre = ''
-BEGIN
-SELECT
-    0 AS success,
-    'El nombre de la vacuna es obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'El nombre de la vacuna es obligatorio', 1;
 
-    -- 🔥 Normalización
-    SET @nombre_normalizado = UPPER(LTRIM(RTRIM(@nombre)));
+        -- 🔥 Normalización
+        SET @nombre_normalizado = UPPER(LTRIM(RTRIM(@nombre)));
 
-    -- 🔹 Buscar si ya existe
+        -- 🔹 Buscar duplicado
 SELECT @id_vacuna = id_vacuna
 FROM dbo.vacunas
 WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
 
--- 🔥 Si existe → devolver
+-- 🔁 Si existe → devolverla
 IF @id_vacuna IS NOT NULL
 BEGIN
+COMMIT;
+
 SELECT
     1 AS success,
     'La vacuna ya existía' AS mensaje,
@@ -2576,19 +2793,21 @@ SELECT
                 WHERE id_vacuna = @id_vacuna
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-            ) AS vacuna
+                ) AS vacuna
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 RETURN;
 END
 
-    -- 🔹 Insertar
+        -- ➕ Insertar
 INSERT INTO dbo.vacunas (nombre)
 VALUES (@nombre_normalizado);
 
 SET @id_vacuna = SCOPE_IDENTITY();
 
-    -- 🔹 Respuesta
+COMMIT;
+
+-- ✅ Respuesta
 SELECT
     1 AS success,
     'Vacuna creada correctamente' AS mensaje,
@@ -2601,9 +2820,20 @@ SELECT
                 WHERE id_vacuna = @id_vacuna
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-        ) AS vacuna
+            ) AS vacuna
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
@@ -2612,7 +2842,8 @@ GO
 ================================================================================*/
 --DECLARE @json NVARCHAR(MAX) = '{ "id_usuario": 1,  "id_mascota": 1,  "id_desparasitacion": 1,  "fecha_aplicacion": "2025-03-15",  "proxima_dosis": "2025-09-15",  "observaciones": "Dosis 2 comp."}';
 --EXEC dbo.sp_insert_desparasitacion_json @json;
-go
+
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_desparasitacion_mascota_json
     (
     @json NVARCHAR(MAX)
@@ -2632,7 +2863,7 @@ BEGIN TRAN;
             @proxima_dosis DATE,
             @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.observaciones');
 
-        -- 🔥 Conversión segura fechas
+        -- 🔥 Fechas seguras
         SET @fecha_aplicacion = TRY_CONVERT(DATE, JSON_VALUE(@json, '$.fecha_aplicacion'));
         SET @proxima_dosis = TRY_CONVERT(DATE, JSON_VALUE(@json, '$.proxima_dosis'));
 
@@ -2644,16 +2875,7 @@ BEGIN TRAN;
               AND id_usuario = @id_usuario
               AND activo = 1
         )
-BEGIN
-ROLLBACK;
-
-SELECT
-    0 AS success,
-    'La mascota no pertenece al usuario' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
+            THROW 50001, 'La mascota no pertenece al usuario', 1;
 
         -- 🔒 VALIDACIÓN DESPARASITACIÓN
         IF NOT EXISTS (
@@ -2661,18 +2883,9 @@ END
             FROM dbo.desparasitaciones
             WHERE id_desparasitacion = @id_desparasitacion
         )
-BEGIN
-ROLLBACK;
+            THROW 50002, 'El desparasitante no existe', 1;
 
-SELECT
-    0 AS success,
-    'El desparasitante no existe' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
-
-        -- 💉 INSERTAR REGISTRO
+        -- 💉 INSERT
 INSERT INTO dbo.desparasitaciones_mascota
 (
     id_mascota,
@@ -2709,32 +2922,53 @@ SELECT
 
 END TRY
 BEGIN CATCH
-IF @@TRANCOUNT > 0
-            ROLLBACK;
+
+IF @@TRANCOUNT > 0 ROLLBACK;
 
 SELECT
     0 AS success,
     ERROR_MESSAGE() AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END CATCH
 END;
 GO
-
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_desparasitaciones
     AS
 BEGIN
     SET NOCOUNT ON;
 
+BEGIN TRY
+
 SELECT
-    id_desparasitacion,
-    nombre,
-    tipo
-FROM dbo.desparasitaciones
-ORDER BY nombre
-    FOR JSON PATH;
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    id_desparasitacion,
+                    nombre,
+                    tipo
+                FROM dbo.desparasitaciones
+                ORDER BY nombre
+                FOR JSON PATH
+        )
+            ) AS desparasitaciones
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
-GO
-CREATE OR ALTER PROCEDURE sp_insert_desparasitacion_catalogo_json
+GO--listo
+CREATE OR ALTER PROCEDURE dbo.sp_insert_desparasitacion_catalogo_json
     (
     @json NVARCHAR(MAX)
     )
@@ -2742,44 +2976,35 @@ CREATE OR ALTER PROCEDURE sp_insert_desparasitacion_catalogo_json
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@nombre NVARCHAR(150),
-        @tipo NVARCHAR(50),
-        @nombre_normalizado NVARCHAR(150),
-        @tipo_normalizado NVARCHAR(50),
-        @id_desparasitacion INT;
+BEGIN TRY
+BEGIN TRAN;
 
-    -- 🔹 Parsear JSON
+        DECLARE
+@nombre NVARCHAR(150),
+            @tipo NVARCHAR(50),
+            @nombre_normalizado NVARCHAR(150),
+            @tipo_normalizado NVARCHAR(50),
+            @id_desparasitacion INT;
+
+        -- 🔹 Parsear JSON
 SELECT
     @nombre = LTRIM(RTRIM(JSON_VALUE(@json, '$.nombre'))),
     @tipo = LTRIM(RTRIM(JSON_VALUE(@json, '$.tipo')));
 
--- 🔹 Validación nombre
+-- 🔒 Validación nombre
 IF @nombre IS NULL OR @nombre = ''
-BEGIN
-SELECT
-    0 AS success,
-    'El nombre es obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'El nombre es obligatorio', 1;
 
-    -- 🔥 Normalización
-    SET @nombre_normalizado = UPPER(@nombre);
-    SET @tipo_normalizado = UPPER(@tipo);
+        -- 🔥 Normalización
+        SET @nombre_normalizado = UPPER(@nombre);
+        SET @tipo_normalizado = UPPER(@tipo);
 
-    -- 🔒 Validación tipo (opcional pero PRO)
-    IF @tipo_normalizado IS NOT NULL
-       AND @tipo_normalizado NOT IN ('INTERNO', 'EXTERNO')
-BEGIN
-SELECT
-    0 AS success,
-    'Tipo inválido (INTERNO / EXTERNO)' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+        -- 🔒 Validación tipo
+        IF @tipo_normalizado IS NOT NULL
+           AND @tipo_normalizado NOT IN ('INTERNO', 'EXTERNO')
+            THROW 50002, 'Tipo inválido (INTERNO / EXTERNO)', 1;
 
-    -- 🔍 Buscar si ya existe
+        -- 🔍 Buscar duplicado
 SELECT @id_desparasitacion = id_desparasitacion
 FROM dbo.desparasitaciones
 WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
@@ -2787,6 +3012,8 @@ WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
 -- 🔁 Si existe → devolver
 IF @id_desparasitacion IS NOT NULL
 BEGIN
+COMMIT;
+
 SELECT
     1 AS success,
     'El desparasitante ya existía' AS mensaje,
@@ -2800,19 +3027,21 @@ SELECT
                 WHERE id_desparasitacion = @id_desparasitacion
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-            ) AS desparasitacion
+                ) AS desparasitacion
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 RETURN;
 END
 
-    -- ➕ Insertar
+        -- ➕ Insertar
 INSERT INTO dbo.desparasitaciones (nombre, tipo)
 VALUES (@nombre_normalizado, @tipo_normalizado);
 
 SET @id_desparasitacion = SCOPE_IDENTITY();
 
-    -- 🔹 Respuesta
+COMMIT;
+
+-- ✅ Respuesta
 SELECT
     1 AS success,
     'Desparasitante creado correctamente' AS mensaje,
@@ -2826,15 +3055,27 @@ SELECT
                 WHERE id_desparasitacion = @id_desparasitacion
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-        ) AS desparasitacion
+            ) AS desparasitacion
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
 
 --DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1,  "fecha": "2025-04-01",  "peso": 28.5,  "observaciones": "Peso estable"}';
 --EXEC dbo.sp_insert_peso_json @json;
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_peso_json
     (
     @json NVARCHAR(MAX)
@@ -2847,13 +3088,16 @@ BEGIN TRY
 BEGIN TRAN;
 
         DECLARE
-@id_usuario INT = JSON_VALUE(@json, '$.id_usuario'),
-            @id_mascota INT = JSON_VALUE(@json, '$.id_mascota'),
-            @fecha DATE = ISNULL(JSON_VALUE(@json, '$.fecha'), GETDATE()),
+@id_usuario INT = TRY_CAST(JSON_VALUE(@json, '$.id_usuario') AS INT),
+            @id_mascota INT = TRY_CAST(JSON_VALUE(@json, '$.id_mascota') AS INT),
+            @fecha DATE = TRY_CONVERT(DATE, JSON_VALUE(@json, '$.fecha')),
             @peso DECIMAL(5,2) = TRY_CAST(JSON_VALUE(@json, '$.peso') AS DECIMAL(5,2)),
             @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.observaciones');
 
-        -- 🔒 VALIDACIÓN
+        -- 🔥 default fecha
+        SET @fecha = ISNULL(@fecha, GETDATE());
+
+        -- 🔒 VALIDACIÓN MASCOTA
         IF NOT EXISTS (
             SELECT 1
             FROM dbo.mascotas
@@ -2861,15 +3105,11 @@ BEGIN TRAN;
               AND id_usuario = @id_usuario
               AND activo = 1
         )
-BEGIN
             THROW 50001, 'La mascota no pertenece al usuario', 1;
-END
 
         -- ⚠ VALIDACIÓN PESO
         IF @peso IS NULL OR @peso <= 0
-BEGIN
             THROW 50002, 'Peso inválido', 1;
-END
 
         -- 💉 INSERT
 INSERT INTO dbo.peso_mascota
@@ -2890,15 +3130,29 @@ VALUES
 COMMIT;
 
 SELECT
-    'OK' AS status
+    1 AS success,
+    'Peso registrado correctamente' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    @id_mascota AS id_mascota,
+                    @fecha AS fecha,
+                    @peso AS peso
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+            ) AS peso
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY
 BEGIN CATCH
-IF @@TRANCOUNT > 0
-            ROLLBACK;
 
-        THROW;
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END CATCH
 END;
 GO
@@ -2910,7 +3164,7 @@ GO
 go
 --DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1,  "id_enfermedad": 1,  "estado": "CURADA",  "fecha_diagnostico": "2024-11-04",  "observaciones": "Resolución en 5 días con tratamiento"}';
 --EXEC dbo.sp_insert_enfermedad_json @json;
-go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_enfermedad_json
     (
     @json NVARCHAR(MAX)
@@ -2930,7 +3184,7 @@ BEGIN TRAN;
             @fecha_diagnostico DATE,
             @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.observaciones');
 
-        -- 🔥 Conversión segura fecha
+        -- 🔥 Fecha segura
         SET @fecha_diagnostico = TRY_CONVERT(DATE, JSON_VALUE(@json, '$.fecha_diagnostico'));
 
         -- 🔒 VALIDACIÓN MASCOTA
@@ -2941,16 +3195,7 @@ BEGIN TRAN;
               AND id_usuario = @id_usuario
               AND activo = 1
         )
-BEGIN
-ROLLBACK;
-
-SELECT
-    0 AS success,
-    'La mascota no pertenece al usuario' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
+            THROW 50001, 'La mascota no pertenece al usuario', 1;
 
         -- 🔒 VALIDACIÓN ENFERMEDAD
         IF NOT EXISTS (
@@ -2958,16 +3203,7 @@ END
             FROM dbo.enfermedades
             WHERE id_enfermedad = @id_enfermedad
         )
-BEGIN
-ROLLBACK;
-
-SELECT
-    0 AS success,
-    'La enfermedad no existe' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
+            THROW 50002, 'La enfermedad no existe', 1;
 
         -- 🧠 NORMALIZAR ESTADO
         SET @estado = UPPER(LTRIM(RTRIM(@estado)));
@@ -2980,18 +3216,9 @@ END
 
         -- 🔒 VALIDACIÓN ESTADO
         IF @estado NOT IN ('ACTIVA', 'CURADA', 'CRONICA')
-BEGIN
-ROLLBACK;
+            THROW 50003, 'Estado inválido (ACTIVA, CURADA, CRONICA)', 1;
 
-SELECT
-    0 AS success,
-    'Estado inválido (ACTIVA, CURADA, CRONICA)' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
-
-        -- 💉 INSERTAR REGISTRO
+        -- 💉 INSERT
 INSERT INTO dbo.enfermedades_mascota
 (
     id_mascota,
@@ -3028,30 +3255,52 @@ SELECT
 
 END TRY
 BEGIN CATCH
-IF @@TRANCOUNT > 0
-            ROLLBACK;
+
+IF @@TRANCOUNT > 0 ROLLBACK;
 
 SELECT
     0 AS success,
     ERROR_MESSAGE() AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END CATCH
 END;
 GO
-
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_enfermedades
     AS
 BEGIN
     SET NOCOUNT ON;
 
+BEGIN TRY
+
 SELECT
-    id_enfermedad,
-    nombre
-FROM dbo.enfermedades
-ORDER BY nombre
-    FOR JSON PATH;
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    id_enfermedad,
+                    nombre
+                FROM dbo.enfermedades
+                ORDER BY nombre
+                FOR JSON PATH
+        )
+            ) AS enfermedades
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_enfermedad_catalogo_json
     (
     @json NVARCHAR(MAX)
@@ -3060,29 +3309,26 @@ CREATE OR ALTER PROCEDURE dbo.sp_insert_enfermedad_catalogo_json
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@nombre NVARCHAR(150),
-        @nombre_normalizado NVARCHAR(150),
-        @id_enfermedad INT;
+BEGIN TRY
+BEGIN TRAN;
 
-    -- 🔹 Parsear JSON
+        DECLARE
+@nombre NVARCHAR(150),
+            @nombre_normalizado NVARCHAR(150),
+            @id_enfermedad INT;
+
+        -- 🔹 Parsear JSON
 SELECT
     @nombre = LTRIM(RTRIM(JSON_VALUE(@json, '$.nombre')));
 
--- 🔹 Validación
+-- 🔒 Validación
 IF @nombre IS NULL OR @nombre = ''
-BEGIN
-SELECT
-    0 AS success,
-    'El nombre de la enfermedad es obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'El nombre de la enfermedad es obligatorio', 1;
 
-    -- 🔥 Normalización
-    SET @nombre_normalizado = UPPER(@nombre);
+        -- 🔥 Normalización
+        SET @nombre_normalizado = UPPER(@nombre);
 
-    -- 🔍 Buscar existente (case insensitive)
+        -- 🔍 Buscar duplicado
 SELECT @id_enfermedad = id_enfermedad
 FROM dbo.enfermedades
 WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
@@ -3090,6 +3336,8 @@ WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
 -- 🔁 Si existe → devolver
 IF @id_enfermedad IS NOT NULL
 BEGIN
+COMMIT;
+
 SELECT
     1 AS success,
     'La enfermedad ya existía' AS mensaje,
@@ -3102,19 +3350,21 @@ SELECT
                 WHERE id_enfermedad = @id_enfermedad
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-            ) AS enfermedad
+                ) AS enfermedad
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 RETURN;
 END
 
-    -- ➕ Insertar
+        -- ➕ Insertar
 INSERT INTO dbo.enfermedades (nombre)
 VALUES (@nombre_normalizado);
 
 SET @id_enfermedad = SCOPE_IDENTITY();
 
-    -- 🔹 Respuesta
+COMMIT;
+
+-- ✅ Respuesta
 SELECT
     1 AS success,
     'Enfermedad creada correctamente' AS mensaje,
@@ -3127,9 +3377,20 @@ SELECT
                 WHERE id_enfermedad = @id_enfermedad
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-        ) AS enfermedad
+            ) AS enfermedad
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
@@ -3139,7 +3400,7 @@ GO
 
 --DECLARE @json NVARCHAR(MAX) = '{  "id_usuario": 1,  "id_mascota": 1, "id_alergia": 1,  "descripcion": "Alergia estacional",  "severidad": "leve",  "observaciones": "Primavera principalmente"}';
 --EXEC dbo.sp_insert_alergia_json @json;
-go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_alergia_json
     (
     @json NVARCHAR(MAX)
@@ -3166,16 +3427,7 @@ BEGIN TRAN;
               AND id_usuario = @id_usuario
               AND activo = 1
         )
-BEGIN
-ROLLBACK;
-
-SELECT
-    0 AS success,
-    'La mascota no pertenece al usuario' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
+            THROW 50001, 'La mascota no pertenece al usuario', 1;
 
         -- 🔒 VALIDACIÓN ALERGIA
         IF NOT EXISTS (
@@ -3183,34 +3435,16 @@ END
             FROM dbo.alergias
             WHERE id_alergia = @id_alergia
         )
-BEGIN
-ROLLBACK;
+            THROW 50002, 'La alergia no existe', 1;
 
-SELECT
-    0 AS success,
-    'La alergia no existe' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
-
-        -- 🧠 NORMALIZAR SEVERIDAD (SIN CAMBIAR VALORES)
+        -- 🧠 NORMALIZAR SEVERIDAD
         SET @severidad = UPPER(LTRIM(RTRIM(@severidad)));
 
-        -- 🔒 VALIDACIÓN SEVERIDAD (CONSISTENTE CON DB)
+        -- 🔒 VALIDACIÓN SEVERIDAD
         IF @severidad NOT IN ('LEVE', 'MODERADA', 'GRAVE')
-BEGIN
-ROLLBACK;
+            THROW 50003, 'Severidad inválida (LEVE, MODERADA, GRAVE)', 1;
 
-SELECT
-    0 AS success,
-    'Severidad inválida (LEVE, MODERADA, GRAVE)' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
-RETURN;
-END
-
-        -- 💉 INSERTAR RELACIÓN
+        -- 💉 INSERT
 INSERT INTO dbo.alergias_mascota
 (
     id_mascota,
@@ -3245,31 +3479,53 @@ SELECT
 
 END TRY
 BEGIN CATCH
-IF @@TRANCOUNT > 0
-            ROLLBACK;
+
+IF @@TRANCOUNT > 0 ROLLBACK;
 
 SELECT
     0 AS success,
     ERROR_MESSAGE() AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END CATCH
 END;
 GO
 
-CREATE OR ALTER PROCEDURE  dbo.sp_get_alergias
+go--listo
+CREATE OR ALTER PROCEDURE dbo.sp_get_alergias
     AS
 BEGIN
     SET NOCOUNT ON;
 
+BEGIN TRY
+
 SELECT
-    id_alergia,
-    nombre
-FROM dbo.alergias
-ORDER BY nombre
-    FOR JSON PATH;
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    id_alergia,
+                    nombre
+                FROM dbo.alergias
+                ORDER BY nombre
+                FOR JSON PATH
+        )
+            ) AS alergias
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
-go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_alergia_catalogo_json
     (
     @json NVARCHAR(MAX)
@@ -3278,29 +3534,26 @@ CREATE OR ALTER PROCEDURE dbo.sp_insert_alergia_catalogo_json
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@nombre NVARCHAR(150),
-        @nombre_normalizado NVARCHAR(150),
-        @id_alergia INT;
+BEGIN TRY
+BEGIN TRAN;
 
-    -- 🔹 Parsear JSON
+        DECLARE
+@nombre NVARCHAR(150),
+            @nombre_normalizado NVARCHAR(150),
+            @id_alergia INT;
+
+        -- 🔹 Parsear JSON
 SELECT
     @nombre = LTRIM(RTRIM(JSON_VALUE(@json, '$.nombre')));
 
--- 🔹 Validación
+-- 🔒 Validación
 IF @nombre IS NULL OR @nombre = ''
-BEGIN
-SELECT
-    0 AS success,
-    'El nombre de la alergia es obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+            THROW 50001, 'El nombre de la alergia es obligatorio', 1;
 
-    -- 🔥 Normalización
-    SET @nombre_normalizado = UPPER(@nombre);
+        -- 🔥 Normalización
+        SET @nombre_normalizado = UPPER(@nombre);
 
-    -- 🔍 Buscar existente (case insensitive)
+        -- 🔍 Buscar duplicado
 SELECT @id_alergia = id_alergia
 FROM dbo.alergias
 WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
@@ -3308,6 +3561,8 @@ WHERE UPPER(LTRIM(RTRIM(nombre))) = @nombre_normalizado;
 -- 🔁 Si existe → devolver
 IF @id_alergia IS NOT NULL
 BEGIN
+COMMIT;
+
 SELECT
     1 AS success,
     'La alergia ya existía' AS mensaje,
@@ -3320,19 +3575,21 @@ SELECT
                 WHERE id_alergia = @id_alergia
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-            ) AS alergia
+                ) AS alergia
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 RETURN;
 END
 
-    -- ➕ Insertar
+        -- ➕ Insertar
 INSERT INTO dbo.alergias (nombre)
 VALUES (@nombre_normalizado);
 
 SET @id_alergia = SCOPE_IDENTITY();
 
-    -- 🔹 Respuesta
+COMMIT;
+
+-- ✅ Respuesta
 SELECT
     1 AS success,
     'Alergia creada correctamente' AS mensaje,
@@ -3345,46 +3602,77 @@ SELECT
                 WHERE id_alergia = @id_alergia
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
-        ) AS alergia
+            ) AS alergia
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
 /*============================================================================0
   procedimientos de administrar servicios
 ================================================================================*/
-go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_servicios_json
     AS
 BEGIN
     SET NOCOUNT ON;
 
-SELECT
-    s.id_servicio,
-    s.nombre,
-    s.descripcion,
+BEGIN TRY
 
+SELECT
+    1 AS success,
+    'OK' AS mensaje,
     JSON_QUERY(
             (
                 SELECT
-                    sp.tamanio,
-                    sp.precio,
-                    sp.duracion_minutos
-                FROM dbo.servicios_precios sp
-                WHERE sp.id_servicio = s.id_servicio
-                FOR JSON PATH
-        )) AS precios
+                    s.id_servicio,
+                    s.nombre,
+                    s.descripcion,
 
-FROM dbo.servicios s
-WHERE s.activo = 1
-    FOR JSON PATH, ROOT('servicios');
+                    JSON_QUERY(
+                            (
+                                SELECT
+                                    sp.tamanio,
+                                    sp.precio,
+                                    sp.duracion_minutos
+                                FROM dbo.servicios_precios sp
+                                WHERE sp.id_servicio = s.id_servicio
+                                FOR JSON PATH
+                        )) AS precios
+
+                FROM dbo.servicios s
+                WHERE s.activo = 1
+                FOR JSON PATH
+        )
+            ) AS servicios
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
 --DECLARE @json NVARCHAR(MAX) = '{ "nombre": "BAÑOs",  "descripcion": "Baño completo y corte",  "precios": [    { "tamanio": "CHICO", "precio": 5000, "duracion": 45 },    { "tamanio": "MEDIANO", "precio": 7000, "duracion": 60 },    { "tamanio": "GRANDE", "precio": 9000, "duracion": 90 }  ]}';
 --EXEC dbo.sp_insert_servicio_json @json;
-go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_insert_servicio_json
     (
     @json NVARCHAR(MAX)
@@ -3400,18 +3688,19 @@ BEGIN TRAN;
 @nombre NVARCHAR(100) = JSON_VALUE(@json, '$.nombre'),
             @descripcion NVARCHAR(500) = JSON_VALUE(@json, '$.descripcion');
 
-        IF @nombre IS NULL
-BEGIN
-SELECT 0 AS success, 'Nombre obligatorio' AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-RETURN;
-END
+        -- 🔒 VALIDACIÓN
+        IF @nombre IS NULL OR LTRIM(RTRIM(@nombre)) = ''
+            THROW 50001, 'Nombre obligatorio', 1;
 
-INSERT INTO dbo.servicios (nombre, descripcion, duracion_minutos, precio_base, activo)
-VALUES (@nombre, @descripcion, 0, 0, 1);
+        -- 🔥 INSERT SERVICIO
+INSERT INTO dbo.servicios
+(nombre, descripcion, duracion_minutos, precio_base, activo)
+VALUES
+    (@nombre, @descripcion, 0, 0, 1);
 
 DECLARE @id_servicio INT = SCOPE_IDENTITY();
 
+        -- 🔥 INSERT PRECIOS
 INSERT INTO dbo.servicios_precios
 (id_servicio, tamanio, precio, duracion_minutos)
 SELECT
@@ -3423,15 +3712,22 @@ FROM OPENJSON(@json, '$.precios');
 
 COMMIT;
 
-SELECT 1 AS success, 'OK' AS mensaje
+-- ✅ RESPUESTA
+SELECT
+    1 AS success,
+    'Servicio creado correctamente' AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY
 BEGIN CATCH
+
 IF @@TRANCOUNT > 0 ROLLBACK;
 
-SELECT 0 AS success, ERROR_MESSAGE() AS mensaje
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END CATCH
 END;
 GO
@@ -3439,6 +3735,7 @@ GO
 --DECLARE @json NVARCHAR(MAX) = '{  "id_servicio": 3,  "nombre": "BAÑO PREMIUM",  "descripcion": "Baño mejorado",  "precios": [    { "tamanio": "CHICO", "precio": 5000, "duracion": 50 },    { "tamanio": "MEDIANO", "precio": 7000, "duracion": 70 },    { "tamanio": "GRANDE", "precio": 9000, "duracion": 100 }  ]}';
 --EXEC dbo.sp_update_servicio_json @json;
 go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_update_servicio_json
     (
     @json NVARCHAR(MAX)
@@ -3451,18 +3748,31 @@ BEGIN TRY
 BEGIN TRAN;
 
         DECLARE
-@id_servicio INT = JSON_VALUE(@json, '$.id_servicio'),
+@id_servicio INT = TRY_CAST(JSON_VALUE(@json, '$.id_servicio') AS INT),
             @nombre NVARCHAR(100) = JSON_VALUE(@json, '$.nombre'),
             @descripcion NVARCHAR(500) = JSON_VALUE(@json, '$.descripcion');
 
+        -- 🔒 VALIDACIÓN
+        IF @id_servicio IS NULL
+            THROW 50001, 'id_servicio obligatorio', 1;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.servicios WHERE id_servicio = @id_servicio
+        )
+            THROW 50002, 'El servicio no existe', 1;
+
+        -- 🔥 UPDATE CABECERA
 UPDATE dbo.servicios
-SET nombre = ISNULL(@nombre, nombre),
+SET
+    nombre = ISNULL(@nombre, nombre),
     descripcion = ISNULL(@descripcion, descripcion)
 WHERE id_servicio = @id_servicio;
 
+-- 🔥 BORRAR PRECIOS (REEMPLAZO TOTAL)
 DELETE FROM dbo.servicios_precios
 WHERE id_servicio = @id_servicio;
 
+-- 🔥 INSERT NUEVOS PRECIOS
 INSERT INTO dbo.servicios_precios
 (id_servicio, tamanio, precio, duracion_minutos)
 SELECT
@@ -3474,15 +3784,22 @@ FROM OPENJSON(@json, '$.precios');
 
 COMMIT;
 
-SELECT 1 AS success, 'OK' AS mensaje
+-- ✅ RESPUESTA
+SELECT
+    1 AS success,
+    'Servicio actualizado correctamente' AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY
 BEGIN CATCH
+
 IF @@TRANCOUNT > 0 ROLLBACK;
 
-SELECT 0 AS success, ERROR_MESSAGE() AS mensaje
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
 END CATCH
 END;
 GO
@@ -3490,25 +3807,61 @@ GO
 --DECLARE @json NVARCHAR(MAX) = '{  "id_servicio": 1}';
 --EXEC dbo.sp_delete_servicio_json @json;
 go
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_delete_servicio_json
     (
     @json NVARCHAR(MAX)
     )
     AS
 BEGIN
-    DECLARE @id_servicio INT = JSON_VALUE(@json, '$.id_servicio');
+    SET NOCOUNT ON;
 
+BEGIN TRY
+BEGIN TRAN;
+
+        DECLARE @id_servicio INT = TRY_CAST(JSON_VALUE(@json, '$.id_servicio') AS INT);
+
+        -- 🔒 VALIDACIÓN
+        IF @id_servicio IS NULL
+            THROW 50001, 'id_servicio obligatorio', 1;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.servicios
+            WHERE id_servicio = @id_servicio
+        )
+            THROW 50002, 'El servicio no existe', 1;
+
+        -- 🔥 SOFT DELETE
 UPDATE dbo.servicios
 SET activo = 0
 WHERE id_servicio = @id_servicio;
 
-SELECT 1 AS success, 'OK' AS mensaje
+COMMIT;
+
+-- ✅ RESPUESTA
+SELECT
+    1 AS success,
+    'Servicio eliminado correctamente' AS mensaje
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0 ROLLBACK;
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
 END;
 GO
 
 --DECLARE @json NVARCHAR(MAX) = '{  "id_servicio": 2,  "id_mascota": 5}';
 --EXEC dbo.sp_get_servicio_por_mascota @json;
+go--listo
 CREATE OR ALTER PROCEDURE dbo.sp_get_servicio_por_mascota
     (
     @json NVARCHAR(MAX)
@@ -3517,27 +3870,66 @@ CREATE OR ALTER PROCEDURE dbo.sp_get_servicio_por_mascota
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE
-@id_servicio INT = JSON_VALUE(@json, '$.id_servicio'),
-        @id_mascota INT = JSON_VALUE(@json, '$.id_mascota');
+BEGIN TRY
+
+        DECLARE
+@id_servicio INT = TRY_CAST(JSON_VALUE(@json, '$.id_servicio') AS INT),
+            @id_mascota INT = TRY_CAST(JSON_VALUE(@json, '$.id_mascota') AS INT);
+
+        -- 🔒 VALIDACIONES
+        IF @id_servicio IS NULL
+            THROW 50001, 'id_servicio obligatorio', 1;
+
+        IF @id_mascota IS NULL
+            THROW 50002, 'id_mascota obligatorio', 1;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.servicios
+            WHERE id_servicio = @id_servicio AND activo = 1
+        )
+            THROW 50003, 'El servicio no existe', 1;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.mascotas
+            WHERE id_mascota = @id_mascota AND activo = 1
+        )
+            THROW 50004, 'La mascota no existe', 1;
+
+        -- 🔥 QUERY
+SELECT
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    s.id_servicio,
+                    s.nombre,
+                    ISNULL(sp.precio, s.precio_base) AS precio,
+                    ISNULL(sp.duracion_minutos, s.duracion_minutos) AS duracion
+
+                FROM dbo.servicios s
+                         LEFT JOIN dbo.mascotas m
+                                   ON m.id_mascota = @id_mascota
+                         LEFT JOIN dbo.servicios_precios sp
+                                   ON sp.id_servicio = s.id_servicio
+                                       AND sp.tamanio = m.tamanio
+
+                WHERE s.id_servicio = @id_servicio
+                  AND s.activo = 1
+
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+            ) AS servicio
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
 
 SELECT
-    s.id_servicio,
-    s.nombre,
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
-    ISNULL(sp.precio, s.precio_base) AS precio,
-    ISNULL(sp.duracion_minutos, s.duracion_minutos) AS duracion
-
-FROM dbo.servicios s
-         LEFT JOIN dbo.mascotas m ON m.id_mascota = @id_mascota
-         LEFT JOIN dbo.servicios_precios sp
-                   ON sp.id_servicio = s.id_servicio
-                       AND sp.tamanio = m.tamanio
-
-WHERE s.id_servicio = @id_servicio
-  AND s.activo = 1
-
-    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+END CATCH
 END;
 GO
-
