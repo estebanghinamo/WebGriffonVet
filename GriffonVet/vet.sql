@@ -270,7 +270,7 @@ GO
 CREATE TABLE dbo.peso_mascota (
                                   id_peso INT IDENTITY(1,1) PRIMARY KEY,-- Identificador del registro de peso
                                   id_mascota INT NOT NULL,-- Mascota asociada
-                                  fecha DATETIME NOT NULL DEFAULT GETDATE(), -- Fecha de la medicion
+                                  fecha DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE), -- Fecha de la medicion
                                   peso DECIMAL(10,2) NOT NULL, -- Peso registrado
                                   observaciones NVARCHAR(500) NULL, -- Comentarios sobre la medicion
 
@@ -298,8 +298,8 @@ CREATE TABLE dbo.alergias_mascota (
                                       id_mascota INT NOT NULL,-- Mascota afectada
                                       id_alergia INT NOT NULL,-- Alergia registrada
                                       severidad NVARCHAR(20) NULL,-- LEVE, MODERADA, GRAVE
-                                      observaciones NVARCHAR(500) NULL,-- Comentarios sobre la alergia
-
+                                      observaciones NVARCHAR(750) NULL,-- Comentarios sobre la alergia
+                                      fecha_registro DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
                                       CONSTRAINT FK_alergias_mascota_mascotas
                                           FOREIGN KEY (id_mascota) REFERENCES dbo.mascotas(id_mascota),
                                       CONSTRAINT FK_alergias_mascota_alergias
@@ -308,7 +308,9 @@ CREATE TABLE dbo.alergias_mascota (
                                           CHECK (severidad IN ('LEVE', 'MODERADA', 'GRAVE') OR severidad IS NULL)
 );
 GO
-
+/*ALTER TABLE dbo.alergias_mascota
+ADD fecha_registro DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE);
+GO*/
 -- =========================================================
 -- TABLA: vacunas
 -- Catalogo maestro de vacunas
@@ -1865,7 +1867,11 @@ END
 
             -- 🐾 PESOS
             ISNULL(JSON_QUERY((
-                SELECT fecha, peso, observaciones
+                SELECT
+					CONVERT(VARCHAR(10), fecha, 23) AS fecha,
+					peso,
+					observaciones
+
                 FROM dbo.peso_mascota p
                 WHERE p.id_mascota = m.id_mascota
                 ORDER BY fecha DESC
@@ -1874,7 +1880,7 @@ END
 
             -- 🤧 ALERGIAS
             ISNULL(JSON_QUERY((
-                SELECT a.nombre, am.severidad, am.observaciones
+                SELECT a.nombre, am.severidad, am.observaciones, am.fecha_registro
                 FROM dbo.alergias_mascota am
                 JOIN dbo.alergias a ON a.id_alergia = am.id_alergia
                 WHERE am.id_mascota = m.id_mascota
@@ -1920,6 +1926,10 @@ END
                             c.motivo_consulta,
                             c.diagnostico,
                             c.tratamiento,
+							c.anamnesis,
+							c.examen_general,
+							c.diagnostico_presuntivo,
+							c.observaciones,
 
                             -- 💊 TRATAMIENTOS
                             JSON_QUERY((
@@ -3645,7 +3655,7 @@ SELECT
                                 SELECT
                                     sp.tamanio,
                                     sp.precio,
-                                    sp.duracion_minutos
+                                    sp.duracion_minutos as duracion
                                 FROM dbo.servicios_precios sp
                                 WHERE sp.id_servicio = s.id_servicio
                                 FOR JSON PATH
