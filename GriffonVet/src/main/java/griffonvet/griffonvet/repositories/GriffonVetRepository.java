@@ -34,7 +34,7 @@ public class GriffonVetRepository {
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
-//listo
+
     public String registrarUsuario(String json) {
 
         try {
@@ -64,7 +64,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"" + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public Map<String, Object> login(String json) {
 
         SqlParameterSource params = new MapSqlParameterSource()
@@ -106,6 +106,7 @@ public class GriffonVetRepository {
             );
         }
     }
+
     private String generarToken(String correo, int idUsuario, String rol) {
         Date ahora     = new Date();
         Date expiracion = new Date(ahora.getTime() + 1000 * 60 * 60 * 2);
@@ -119,7 +120,7 @@ public class GriffonVetRepository {
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)), SignatureAlgorithm.HS256)
                 .compact();
     }
-//listo
+
     public String insertarClienteMascotaAdmin(String json) {
 
         try {
@@ -153,7 +154,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerCategorias() {
 
         try {
@@ -182,7 +183,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarCategoria(String json) {
 
         try {
@@ -216,7 +217,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerProductos() {
 
         try {
@@ -245,7 +246,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarProducto(MultipartFile imagen, String productoJson) {
 
         try {
@@ -285,7 +286,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String eliminarProducto(String json) {
 
         try {
@@ -319,7 +320,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String actualizarProducto(MultipartFile imagen, String productoJson) {
 
         try {
@@ -359,7 +360,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerMascotasPorUsuario(String json) {
 
         try {
@@ -393,7 +394,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarMascota(String json) {
 
         try {
@@ -423,7 +424,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerClientesConMascotas(String json) {
 
         try {
@@ -453,7 +454,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String getClientes() throws JsonProcessingException {
 
         try {
@@ -480,7 +481,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String getMascota(String json) throws JsonProcessingException {
 
     try {
@@ -514,7 +515,7 @@ public class GriffonVetRepository {
         return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
     }
 }
-//listo
+
     public String editarInfoGeneralMascota(String json) {
 
         try {
@@ -544,7 +545,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarConsultaClinica(String json, MultipartFile[] archivos) {
 
         try {
@@ -611,7 +612,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String actualizarConsultaClinica(String json, MultipartFile[] archivos) {
 
         try {
@@ -680,7 +681,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"" + e.getMessage() + "\"}";
         }
     }
- //listo
+
     public String eliminarConsulta(String json) {
 
         try {
@@ -710,7 +711,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerMedicamentos() {
 
         try {
@@ -740,7 +741,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarMedicamento(String json) {
 
         try {
@@ -770,7 +771,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarVacunacion(String json) {
 
         try {
@@ -801,7 +802,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerVacunas() {
 
         try {
@@ -830,7 +831,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarVacuna(String json) {
 
         try {
@@ -860,7 +861,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarDesparasitacion(String json) {
 
         try {
@@ -890,7 +891,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerDesparasitaciones() {
 
         try {
@@ -919,7 +920,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarDesparasitacionCatalogo(String json) {
 
         try {
@@ -949,7 +950,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarPeso(String json) {
 
         try {
@@ -979,7 +980,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarEnfermedad(String json) {
 
         try {
@@ -1009,7 +1010,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerEnfermedades() {
 
         try {
@@ -1038,7 +1039,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarEnfermedadCatalogo(String json) {
 
         try {
@@ -1068,7 +1069,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarAlergia(String json) {
 
         try {
@@ -1098,7 +1099,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerAlergias() {
 
         try {
@@ -1127,7 +1128,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarAlergiaCatalogo(String json) {
 
         try {
@@ -1157,7 +1158,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerServicios() {
 
         try {
@@ -1186,7 +1187,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String insertarServicio(String json) {
 
         try {
@@ -1220,7 +1221,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String actualizarServicio(String json) {
 
         try {
@@ -1254,7 +1255,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String eliminarServicio(String json) {
 
         try {
@@ -1288,7 +1289,7 @@ public class GriffonVetRepository {
             return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
     }
-//listo
+
     public String obtenerServicioPorMascota(String json) {
 
         try {
@@ -1323,5 +1324,65 @@ public class GriffonVetRepository {
         }
     }
 
+    public String obtenerInfoHome(){
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_home_completo_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
+            }
+
+            Object value = rs.get(0).values().iterator().next();
+
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String insertarInfoHome(String json) {
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_insert_informacion_home_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al insertar servicio\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
 
 }

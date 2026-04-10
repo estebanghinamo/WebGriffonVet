@@ -28,7 +28,7 @@ public class GriffonVetResources {
         this.jsonUtils = jsonUtils;
     }
 
-    //listo
+
     @PostMapping("/usuarios/registro")
     public ResponseEntity<String> registrarUsuario(@RequestBody String json) {
 
@@ -46,7 +46,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> logueo(@RequestBody String json) {
 
@@ -65,7 +65,7 @@ public class GriffonVetResources {
         return ResponseEntity.ok(result);
     }
 
-    //listo
+
     @PostMapping("/insertarClienteMascotaAdmin")
     public ResponseEntity<String> insertarClienteMascotaAdmin(@RequestBody String json) {
 
@@ -85,7 +85,7 @@ public class GriffonVetResources {
     }
 
 
-    //listo
+
     @GetMapping("/ObtenerCategorias")//esta mal escrito
     public ResponseEntity<String> obtenerCategorias() {
 
@@ -102,7 +102,7 @@ public class GriffonVetResources {
                 .body(response);
     }
 
-    //listo
+
     @PostMapping("/InsertarCategoria")
     public ResponseEntity<String> insertarCateoria(@RequestBody String json) {
 
@@ -118,7 +118,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @GetMapping("/obtenerProductos")
     public ResponseEntity<String> obtenerProductos() {
 
@@ -134,7 +134,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/insertarProductos")
     public ResponseEntity<String> crearProducto(
             @RequestParam("imagen") MultipartFile imagen,
@@ -153,7 +153,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @DeleteMapping("/EliminarProducto")
     public ResponseEntity<String> eliminarProducto(@RequestBody String json) {
 
@@ -169,7 +169,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PutMapping("/actualizarProductos")
     public ResponseEntity<String> actualizarProducto(
             @RequestParam(value = "imagen", required = false) MultipartFile imagen,
@@ -188,7 +188,7 @@ public class GriffonVetResources {
                 .body(response);
     }
 
-    //listo
+
     @GetMapping("/usuario/obtenerMascotas")
     public ResponseEntity<String> obtenerMascotasPorUsuario() {
         String response = griffonVetRepository.obtenerMascotasPorUsuario(
@@ -204,7 +204,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/insertarMascotas")
     public ResponseEntity<String> insertarMascota(@RequestBody String json) {
 
@@ -221,7 +221,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/BusquedaClientes")
     public ResponseEntity<String> obtenerClientesConMascotas(@RequestBody String json) {
 
@@ -237,7 +237,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @GetMapping("/obtenerClientes")
     public ResponseEntity<?> getClientes() throws JsonProcessingException {
         String response = griffonVetRepository.getClientes();
@@ -252,14 +252,14 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/obtenerMascota")
     public ResponseEntity<?> getMascota(@RequestBody String json) throws JsonProcessingException {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(griffonVetRepository.getMascota(json));
     }
-    //listo
+
     @PostMapping(value = "/nuevaConsulta", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> insertarConsultaClinica(
             @RequestParam("consulta") String json,
@@ -278,7 +278,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PutMapping("/actualizarMascotas")
     public ResponseEntity<String> editarInfoGeneralMascota(@RequestBody String json) {
 
@@ -295,7 +295,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //esta listo para su uso
+
     @PutMapping(value = "/ActualizarConsultaClinica", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> actualizarConsultaClinica(
             @RequestParam("consulta") String json,
@@ -314,7 +314,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @DeleteMapping("/EliminarConsulta")
     public ResponseEntity<String> eliminarConsulta(@RequestBody String json) {
 
@@ -330,7 +330,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @GetMapping("/ObtenerMedicamentos")
     public ResponseEntity<String> obtenerMedicamentos() {
 
@@ -346,7 +346,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarMedicamento")
     public ResponseEntity<String> insertarMedicamento(@RequestBody String json) {
 
@@ -362,7 +362,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarVacunacion")
     public ResponseEntity<String> insertarVacunacion(@RequestBody String json) {
 
@@ -378,7 +378,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @GetMapping("/ObtenerVacunas")
     public ResponseEntity<String> obtenerVacunas() {
 
@@ -394,7 +394,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarVacuna")
     public ResponseEntity<String> insertarVacuna(@RequestBody String json) {
 
@@ -410,7 +410,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarDesparasitacion")
     public ResponseEntity<String> insertarDesparasitacion(@RequestBody String json) {
 
@@ -426,7 +426,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @GetMapping("/ObtenerDesparasitaciones")
     public ResponseEntity<String> obtenerDesparasitaciones() {
 
@@ -442,7 +442,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarTipoDesparasitacion")
     public ResponseEntity<String> insertarDesparasitacionCatalogo(@RequestBody String json) {
 
@@ -458,7 +458,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarPeso")
     public ResponseEntity<String> insertarPeso(@RequestBody String json) {
 
@@ -474,7 +474,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarEnfermedad")
     public ResponseEntity<String> insertarEnfermedad(@RequestBody String json) {
 
@@ -490,7 +490,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @GetMapping("/ObtenerEnfermedades")
     public ResponseEntity<String> obtenerEnfermedades() {
 
@@ -506,7 +506,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarEnfermedadCatalogo")
     public ResponseEntity<String> insertarEnfermedadCatalogo(@RequestBody String json) {
 
@@ -522,7 +522,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarAlergia")
     public ResponseEntity<String> insertarAlergia(@RequestBody String json) {
 
@@ -538,7 +538,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @GetMapping("/ObtenerAlergias")
     public ResponseEntity<String> obtenerAlergias() {
 
@@ -554,7 +554,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarAlergiaCatalogo")
     public ResponseEntity<String> insertarAlergiaCatalogo(@RequestBody String json) {
 
@@ -570,7 +570,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @GetMapping("/ObtenerServicios")
     public ResponseEntity<String> obtenerServicios() {
 
@@ -586,7 +586,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/InsertarServicio")
     public ResponseEntity<String> insertarServicio(@RequestBody String json) {
 
@@ -602,7 +602,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PutMapping("/ActualizarServicio")
     public ResponseEntity<String> actualizarServicio(@RequestBody String json) {
 
@@ -618,7 +618,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @DeleteMapping("/EliminarServicio")
     public ResponseEntity<String> eliminarServicio(@RequestBody String json) {
 
@@ -634,7 +634,7 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-    //listo
+
     @PostMapping("/ObtenerServicioPorMascota")
     public ResponseEntity<String> obtenerServicioPorMascota(@RequestBody String json) {
 
@@ -651,6 +651,37 @@ public class GriffonVetResources {
                 .body(response);
     }
 
+    @GetMapping("/ObtenerInfoHome")
+    public ResponseEntity<String> obtenerInfoHome() {
+
+        String response = griffonVetRepository.obtenerInfoHome();
+
+        if (response.contains("\"success\":0")) {
+            return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @PostMapping("/InsertarInfoHome")
+    public ResponseEntity<String> insertarInfoHome(@RequestBody String json) {
+
+        String response = griffonVetRepository.insertarInfoHome(json);
+
+        if (response.contains("\"success\":0")) {
+            return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
 
 
 
