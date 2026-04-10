@@ -668,9 +668,10 @@ public class GriffonVetResources {
     }
 
     @PostMapping("/InsertarInfoHome")
-    public ResponseEntity<String> insertarInfoHome(@RequestBody String json) {
+    public ResponseEntity<String> insertarInfoHome(@RequestParam(value = "imagen", required = false) MultipartFile imagen,
+                                                   @RequestParam("data") String json) {
 
-        String response = griffonVetRepository.insertarInfoHome(json);
+        String response = griffonVetRepository.insertarInfoHome(imagen,json);
 
         if (response.contains("\"success\":0")) {
             return ResponseEntity.badRequest()
@@ -683,7 +684,54 @@ public class GriffonVetResources {
                 .body(response);
     }
 
+    @PutMapping("/ActualizarInfoHome")
+    public ResponseEntity<String> actualizarInfoHome(
+            @RequestParam(value = "imagen", required = false) MultipartFile imagen,
+            @RequestParam("data") String json) {
 
+        String response = griffonVetRepository.actualizarInfoHome(imagen,json);
 
+        if (response.contains("\"success\":0")) {
+            return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @DeleteMapping("/EliminarInfoHome")
+    public ResponseEntity<String> eliminarInfoHome(@RequestBody String json) {
+
+        String response = griffonVetRepository.eliminarInfoHome(json);
+
+        if (response.contains("\"success\":0")) {
+            return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
+
+    @GetMapping("/ObtenerNoticias")
+    public ResponseEntity<String> obtenerNoticias() {
+
+        String response = griffonVetRepository.obtenerNoticias();
+
+        if (response.contains("\"success\":0")) {
+            return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
 
 }

@@ -46,7 +46,11 @@ public class SecurityConfig {
                         // endpoints públicos (SIN context-path)
                         .requestMatchers(
                                 "/griffonVet/login",
-                                "/griffonVet/usuarios/registro"
+                                "/griffonVet/usuarios/registro",
+                                "/griffonVet/ObtenerInfoHome",
+                                "/griffonVet/obtenerProductos",
+                                "/griffonVet/ObtenerServicios"
+
 
 
 

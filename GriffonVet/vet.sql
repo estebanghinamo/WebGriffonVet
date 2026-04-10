@@ -185,9 +185,10 @@ CREATE TABLE dbo.informacion_home (
                                       descripcion NVARCHAR(250) NOT NULL,
                                       id_categoria INT NOT NULL,
                                       fecha_publicacion DATETIME NULL DEFAULT GETDATE(),
-                                      imagen_url NVARCHAR(500) NULL
-                        CONSTRAINT FK_infohome_categorias
-                                   FOREIGN KEY (id_categoria) REFERENCES dbo.categorias(id_categoria)
+                                      imagen_url NVARCHAR(500) NULL,
+                                      activo BIT NOT NULL DEFAULT 1
+                                          CONSTRAINT FK_infohome_categorias
+                                          FOREIGN KEY (id_categoria) REFERENCES dbo.categorias(id_categoria)
 );
 
 -- =========================================================
@@ -3957,72 +3958,67 @@ END;
 GO
 --------------------------------------------------------------------
 GO
-
 CREATE OR ALTER PROCEDURE dbo.sp_get_home_completo_json
     AS
 BEGIN
     SET NOCOUNT ON;
-
 BEGIN TRY
 
-SELECT
-    1 AS success,
-    'OK' AS mensaje,
-    JSON_QUERY(
-            (
-                SELECT
+        DECLARE @servicios NVARCHAR(MAX);
+        DECLARE @noticias  NVARCHAR(MAX);
+        DECLARE @result    NVARCHAR(MAX);
 
-                    ISNULL((
-                        SELECT
-                            ih.id_informacion,
-                            ih.titulo,
-                            ih.descripcion,
-                            ih.id_categoria,
-                            c.nombre AS categoria,
-                            ih.imagen_url
-                        FROM dbo.informacion_home ih
-                                 INNER JOIN dbo.categorias c
-                                            ON ih.id_categoria = c.id_categoria
-                        WHERE ih.fecha_publicacion IS NULL
-                        ORDER BY ih.id_informacion
-                        FOR JSON PATH
-                        ), '[]') AS servicios,
+SELECT @servicios = ISNULL((
+    SELECT
+        ih.id_informacion,
+        ih.titulo,
+        ih.descripcion,
+        ih.id_categoria,
+        c.nombre AS categoria,
+        ih.imagen_url
+    FROM dbo.informacion_home ih
+             INNER JOIN dbo.categorias c
+                        ON ih.id_categoria = c.id_categoria
+    WHERE ih.fecha_publicacion IS NULL
+      AND ih.activo = 1
+    ORDER BY ih.id_informacion
+    FOR JSON PATH
+    ), '[]');
 
+SELECT @noticias = ISNULL((
+    SELECT TOP 4
+                ih.id_informacion,
+            ih.titulo,
+           ih.descripcion,
+           ih.id_categoria,
+           c.nombre AS categoria,
+           ih.fecha_publicacion,
+           ih.imagen_url
+    FROM dbo.informacion_home ih
+             INNER JOIN dbo.categorias c
+                        ON ih.id_categoria = c.id_categoria
+    WHERE ih.fecha_publicacion IS NOT NULL
+      AND ih.activo = 1
+    ORDER BY ih.fecha_publicacion DESC
+    FOR JSON PATH
+    ), '[]');
 
-                    ISNULL((
-                        SELECT
-                            ih.id_informacion,
-                            ih.titulo,
-                            ih.descripcion,
-                            ih.id_categoria,
-                            c.nombre AS categoria,
-                            ih.fecha_publicacion,
-                            ih.imagen_url
-                        FROM dbo.informacion_home ih
-                                 INNER JOIN dbo.categorias c
-                                            ON ih.id_categoria = c.id_categoria
-                        WHERE ih.fecha_publicacion IS NOT NULL
-                        ORDER BY ih.fecha_publicacion DESC
-                        FOR JSON PATH
-                        ), '[]') AS noticias
+-- JSON final
+SET @result = '{"success":1,"mensaje":"OK","data":{"servicios":'
+                      + @servicios
+                      + ',"noticias":'
+                      + @noticias
+                      + '}}';
 
-                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-        )
-            ) AS data
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+SELECT @result AS json;
 
 END TRY
 BEGIN CATCH
-
-SELECT
-    0 AS success,
-    ERROR_MESSAGE() AS mensaje
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
-
+        DECLARE @err NVARCHAR(MAX);
+        SET @err = '{"success":0,"mensaje":"' + REPLACE(ERROR_MESSAGE(), '"', '\"') + '"}';
+SELECT @err AS json;
 END CATCH
 END;
-GO
-
 GO
 GO
 CREATE OR ALTER PROCEDURE dbo.sp_insert_informacion_home_json
@@ -4115,6 +4111,189 @@ SELECT
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
             ) AS informacion
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
+END;
+GO
+GO
+CREATE OR ALTER PROCEDURE dbo.sp_update_informacion_home_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+
+        DECLARE
+@id_informacion INT,
+            @titulo NVARCHAR(50),
+            @descripcion NVARCHAR(250),
+            @id_categoria INT,
+            @fecha_publicacion DATETIME,
+            @imagen_url NVARCHAR(500);
+
+        -- 🔹 Parsear JSON
+SELECT
+    @id_informacion = TRY_CAST(JSON_VALUE(@json, '$.id_informacion') AS INT),
+    @titulo = LTRIM(RTRIM(JSON_VALUE(@json, '$.titulo'))),
+    @descripcion = LTRIM(RTRIM(JSON_VALUE(@json, '$.descripcion'))),
+    @id_categoria = TRY_CAST(JSON_VALUE(@json, '$.id_categoria') AS INT),
+    @fecha_publicacion = TRY_CAST(JSON_VALUE(@json, '$.fecha_publicacion') AS DATETIME),
+    @imagen_url = JSON_VALUE(@json, '$.imagen_url');
+
+-- 🔒 Validar ID
+IF @id_informacion IS NULL
+BEGIN
+SELECT 0 AS success, 'id_informacion es obligatorio'  AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+        -- 🔒 Validar existencia
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.informacion_home WHERE id_informacion = @id_informacion
+        )
+BEGIN
+SELECT 0 AS success, 'La información no existe'  AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+        -- 🔒 Validar categoría (si viene)
+        IF @id_categoria IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM dbo.categorias WHERE id_categoria = @id_categoria
+        )
+BEGIN
+SELECT 0 AS success, 'La categoría no existe'  AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+        -- 🔹 Update parcial
+UPDATE dbo.informacion_home
+SET
+    titulo = ISNULL(@titulo, titulo),
+    descripcion = ISNULL(@descripcion, descripcion),
+    id_categoria = ISNULL(@id_categoria, id_categoria),
+    fecha_publicacion = @fecha_publicacion, -- permite NULL explícito
+    imagen_url = ISNULL(@imagen_url, imagen_url)
+WHERE id_informacion = @id_informacion;
+
+-- ✅ Respuesta
+SELECT
+    1 AS success,
+    'Información actualizada correctamente' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    ih.id_informacion,
+                    ih.titulo,
+                    ih.descripcion,
+                    ih.id_categoria,
+                    c.nombre AS categoria,
+                    ih.fecha_publicacion,
+                    ih.imagen_url
+                FROM dbo.informacion_home ih
+                         INNER JOIN dbo.categorias c
+                                    ON ih.id_categoria = c.id_categoria
+                WHERE ih.id_informacion = @id_informacion
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        )
+            ) AS informacion
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+END CATCH
+END;
+GO
+GO
+CREATE OR ALTER PROCEDURE dbo.sp_delete_informacion_home_json
+    (
+    @json NVARCHAR(MAX)
+    )
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @id_informacion INT = TRY_CAST(JSON_VALUE(@json, '$.id_informacion') AS INT);
+
+    -- 🔒 Validación
+    IF @id_informacion IS NULL
+BEGIN
+SELECT
+    0 AS success,
+    'id_informacion es obligatorio' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.informacion_home WHERE id_informacion = @id_informacion
+    )
+BEGIN
+SELECT
+    0 AS success,
+    'La información no existe' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+RETURN;
+END
+
+    -- 🗑️ Soft delete
+UPDATE dbo.informacion_home
+SET activo = 0
+WHERE id_informacion = @id_informacion;
+
+SELECT
+    1 AS success,
+    'Información eliminada correctamente' AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+END;
+GO
+CREATE OR ALTER PROCEDURE dbo.sp_get_noticias_json
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+
+SELECT
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            ISNULL((
+                SELECT
+                    ih.id_informacion,
+                    ih.titulo,
+                    ih.descripcion,
+                    ih.id_categoria,
+                    c.nombre AS categoria,
+                    ih.fecha_publicacion,
+                    ih.imagen_url
+                FROM dbo.informacion_home ih
+                         INNER JOIN dbo.categorias c
+                                    ON ih.id_categoria = c.id_categoria
+                WHERE ih.fecha_publicacion IS NOT NULL
+                  AND ih.activo = 1
+                ORDER BY ih.fecha_publicacion DESC
+                FOR JSON PATH
+                ), '[]')
+    ) AS data
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY

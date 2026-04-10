@@ -1352,10 +1352,18 @@ public class GriffonVetRepository {
         }
     }
 
-    public String insertarInfoHome(String json) {
+    public String insertarInfoHome(MultipartFile imagen,String datajson) {
         try {
+
+            JsonObject json = JsonParser.parseString(datajson).getAsJsonObject();
+
+            if (imagen != null && !imagen.isEmpty()) {
+                String urlImagen = cloudinaryService.subirArchivo(imagen);
+                json.addProperty("imagen_url", urlImagen);
+            }
+
             MapSqlParameterSource params = new MapSqlParameterSource()
-                    .addValue("json", json);
+                    .addValue("json", json.toString());
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
                     "sp_insert_informacion_home_json",
@@ -1385,4 +1393,107 @@ public class GriffonVetRepository {
         }
     }
 
+    public String actualizarInfoHome(MultipartFile imagen,String datajson) {
+
+        try {
+
+            JsonObject json = JsonParser.parseString(datajson).getAsJsonObject();
+
+            if (imagen != null && !imagen.isEmpty()) {
+                String urlImagen = cloudinaryService.subirArchivo(imagen);
+                json.addProperty("imagen_url", urlImagen);
+            }
+
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json.toString());
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_update_informacion_home_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al actualizar servicio\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String eliminarInfoHome(String json) {
+
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_delete_informacion_home_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            // 🔹 Error
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Error al eliminar servicio\"}";
+            }
+
+            // 🔹 JSON directo del SP
+            Object value = rs.get(0).values().iterator().next();
+
+            if (value != null) {
+                return value.toString();
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+    public String obtenerNoticias(){
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_noticias_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
+            }
+
+            Object value = rs.get(0).values().iterator().next();
+
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
 }
