@@ -16,36 +16,39 @@
    ========================================================= */
 --este esta listo para uso
 -- BORRAR IF OBJECT_ID('dbo.archivos_clinicos', 'U') IS NOT NULL DROP TABLE dbo.archivos_clinicos;
+-- 1. Tablas hoja (sin dependientes)
 IF OBJECT_ID('dbo.estudios_clinicos', 'U') IS NOT NULL DROP TABLE dbo.estudios_clinicos;
 IF OBJECT_ID('dbo.tratamientos', 'U') IS NOT NULL DROP TABLE dbo.tratamientos;
-
 IF OBJECT_ID('dbo.enfermedades_mascota', 'U') IS NOT NULL DROP TABLE dbo.enfermedades_mascota;
 IF OBJECT_ID('dbo.vacunas_mascota', 'U') IS NOT NULL DROP TABLE dbo.vacunas_mascota;
 IF OBJECT_ID('dbo.desparasitaciones_mascota', 'U') IS NOT NULL DROP TABLE dbo.desparasitaciones_mascota;
 IF OBJECT_ID('dbo.alergias_mascota', 'U') IS NOT NULL DROP TABLE dbo.alergias_mascota;
 IF OBJECT_ID('dbo.peso_mascota', 'U') IS NOT NULL DROP TABLE dbo.peso_mascota;
-
 IF OBJECT_ID('dbo.consultas_clinicas', 'U') IS NOT NULL DROP TABLE dbo.consultas_clinicas;
+
+-- 2. Tablas intermedias
 IF OBJECT_ID('dbo.historias_clinicas', 'U') IS NOT NULL DROP TABLE dbo.historias_clinicas;
-
 IF OBJECT_ID('dbo.reservas', 'U') IS NOT NULL DROP TABLE dbo.reservas;
+IF OBJECT_ID('dbo.servicios_precios', 'U') IS NOT NULL DROP TABLE dbo.servicios_precios;
+IF OBJECT_ID('dbo.agenda_bloqueos', 'U') IS NOT NULL DROP TABLE dbo.agenda_bloqueos;
+IF OBJECT_ID('dbo.horarios_atencion', 'U') IS NOT NULL DROP TABLE dbo.horarios_atencion;
+IF OBJECT_ID('dbo.productos', 'U') IS NOT NULL DROP TABLE dbo.productos;
 
+-- 3. Tablas de catálogos (referenciadas por las de arriba)
 IF OBJECT_ID('dbo.medicamentos', 'U') IS NOT NULL DROP TABLE dbo.medicamentos;
 IF OBJECT_ID('dbo.enfermedades', 'U') IS NOT NULL DROP TABLE dbo.enfermedades;
 IF OBJECT_ID('dbo.vacunas', 'U') IS NOT NULL DROP TABLE dbo.vacunas;
 IF OBJECT_ID('dbo.desparasitaciones', 'U') IS NOT NULL DROP TABLE dbo.desparasitaciones;
 IF OBJECT_ID('dbo.alergias', 'U') IS NOT NULL DROP TABLE dbo.alergias;
-
-IF OBJECT_ID('dbo.agenda_bloqueos', 'U') IS NOT NULL DROP TABLE dbo.agenda_bloqueos;
-IF OBJECT_ID('dbo.horarios_atencion', 'U') IS NOT NULL DROP TABLE dbo.horarios_atencion;
-IF OBJECT_ID('dbo.productos', 'U') IS NOT NULL DROP TABLE dbo.productos;
-IF OBJECT_ID('dbo.servicios_precios', 'U') IS NOT NULL DROP TABLE dbo.servicios_precios;
-IF OBJECT_ID('dbo.categorias', 'U') IS NOT NULL DROP TABLE dbo.categorias;
 IF OBJECT_ID('dbo.informacion_home', 'U') IS NOT NULL DROP TABLE dbo.informacion_home;
-
 IF OBJECT_ID('dbo.servicios', 'U') IS NOT NULL DROP TABLE dbo.servicios;
 
+-- 4. Tablas padre (las que fallan ahora)
+IF OBJECT_ID('dbo.categorias', 'U') IS NOT NULL DROP TABLE dbo.categorias;
 IF OBJECT_ID('dbo.mascotas', 'U') IS NOT NULL DROP TABLE dbo.mascotas;
+IF OBJECT_ID('dbo.tipo_especie', 'U') IS NOT NULL DROP TABLE dbo.tipo_especie;
+
+-- 5. Tabla raíz
 IF OBJECT_ID('dbo.usuarios', 'U') IS NOT NULL DROP TABLE dbo.usuarios;
 GO
 
@@ -69,7 +72,11 @@ CREATE TABLE dbo.usuarios (
 );
 GO
 
-
+CREATE TABLE dbo.tipo_especie (
+                                  id_especie INT IDENTITY(1,1) PRIMARY KEY,
+                                  nombre NVARCHAR(50) NOT NULL UNIQUE,
+                                  activo BIT NOT NULL DEFAULT 1
+);
 -- =========================================================
 -- TABLA: mascotas
 -- Guarda las mascotas registradas por cada cliente
@@ -78,7 +85,7 @@ CREATE TABLE dbo.mascotas (
                               id_mascota INT IDENTITY(1,1) PRIMARY KEY,-- Identificador unico de la mascota
                               id_usuario INT NOT NULL, -- Dueño de la mascota (cliente)
                               nombre NVARCHAR(100) NOT NULL,-- Nombre de la mascota
-                              especie NVARCHAR(50) NOT NULL,-- Ejemplo: Perro, Gato
+                              id_especie INT NOT NULL, -- Ejemplo: Perro, Gato
                               raza NVARCHAR(100) NULL,-- Raza de la mascota
                               tamanio NVARCHAR(20) NULL,-- Tamaño: Chico, Mediano, Grande
                               fecha_nacimiento DATE NULL,
@@ -92,12 +99,33 @@ CREATE TABLE dbo.mascotas (
                               castrado BIT NOT NULL DEFAULT 0,
                               CONSTRAINT FK_mascotas_usuarios
                                   FOREIGN KEY (id_usuario) REFERENCES dbo.usuarios(id_usuario),
+                              CONSTRAINT FK_mascotas_tipo_especie
+                                  FOREIGN KEY (id_especie) REFERENCES dbo.tipo_especie(id_especie),
                               CONSTRAINT CK_mascotas_tamanio
-                                  CHECK (tamanio IN ('CHICO', 'MEDIANO', 'GRANDE') OR tamanio IS NULL),
+                                  CHECK (tamanio IN ('CHICO', 'MEDIANO', 'GRANDE', 'MUY GRANDE') OR tamanio IS NULL),
                               CONSTRAINT CK_mascotas_sexo
                                   CHECK (sexo IN ('MACHO', 'HEMBRA') OR sexo IS NULL)
 );
 GO
+
+
+GO
+INSERT INTO dbo.tipo_especie (nombre)
+VALUES
+    ('Canino'),
+    ('Felino'),
+    ('Ave'),
+    ('Roedor'),
+    ('Conejo'),
+    ('Reptil'),
+    ('Pez'),
+    ('Equino'),
+    ('Bovino'),
+    ('Ovino'),
+    ('Porcino'),
+    ('Otro');
+GO
+
 
 -- =========================================================
 -- TABLA: servicios
@@ -128,9 +156,10 @@ CREATE TABLE dbo.servicios_precios (
                                            FOREIGN KEY (id_servicio) REFERENCES dbo.servicios(id_servicio),
 
                                        CONSTRAINT CK_servicios_precios_tamanio
-                                           CHECK (tamanio IN ('CHICO', 'MEDIANO', 'GRANDE'))
+                                           CHECK (tamanio IN ('CHICO', 'MEDIANO', 'GRANDE','MUY GRANDE'))
 );
 GO
+
 
 -- =========================================================
 -- TABLA: categorias
@@ -155,8 +184,8 @@ CREATE TABLE dbo.productos (
                                imagen_url NVARCHAR(500) NULL, -- URL o ruta de imagen del producto
                                stock INT NULL,-- Stock opcional, por si queres mostrar disponibilidad
                                activo BIT NOT NULL DEFAULT 1,-- Indica si el producto esta visible
-                               fecha_alta DATETIME NOT NULL DEFAULT GETDATE()-- Fecha de alta del producto
-                                   CONSTRAINT FK_productos_categorias
+                               fecha_alta DATETIME NOT NULL DEFAULT GETDATE(),-- Fecha de alta del producto
+                               CONSTRAINT FK_productos_categorias
                                    FOREIGN KEY (id_categoria) REFERENCES dbo.categorias(id_categoria)
 );
 GO
@@ -190,7 +219,6 @@ CREATE TABLE dbo.informacion_home (
                                           CONSTRAINT FK_infohome_categorias
                                           FOREIGN KEY (id_categoria) REFERENCES dbo.categorias(id_categoria)
 );
-
 -- =========================================================
 -- TABLA: agenda_bloqueos
 -- Sirve para bloquear fechas o franjas horarias
@@ -694,72 +722,8 @@ CREATE INDEX IX_horarios_dia
 
 CREATE INDEX IX_servicios_precios_servicio_tamanio
     ON dbo.servicios_precios(id_servicio, tamanio);
--- =========================================================
--- DATOS INICIALES OPCIONALES
--- Algunos servicios basicos
--- =========================================================
-/*INSERT INTO dbo.servicios (nombre, descripcion, duracion_minutos, precio_base, activo)
-VALUES
-('BAÑO', 'Servicio de baño para mascota', 60, 5000, 1),
-('BAÑO Y CORTE', 'Servicio completo de baño y corte', 90, 9000, 1),
-('CORTE DE UÑAS', 'Corte y mantenimiento de uñas', 20, 2500, 1),
-('LIMPIEZA DE OÍDOS', 'Limpieza e higiene de oídos', 20, 2200, 1);
-GO
-INSERT INTO dbo.servicios_precios (id_servicio, tamanio, precio, duracion_minutos)
-VALUES
--- BAÑO
-(1, 'CHICO', 4000, 45),
-(1, 'MEDIANO', 6000, 60),
-(1, 'GRANDE', 8000, 90),
+-- ========================================================
 
--- BAÑO Y CORTE
-(2, 'CHICO', 7000, 60),
-(2, 'MEDIANO', 9000, 90),
-(2, 'GRANDE', 12000, 120);*/
-
-/*
----------------INSERTS DE PRUEBAS----------------------
-
-
-INSERT INTO dbo.usuarios (nombre, apellido, email, telefono, password_hash, rol)
-VALUES
-('juana', 'peres', 'juana@gmail.com', '3571551111', 'admin123', 'ADMIN'),
-('Maria', 'Gomez', 'maria.gomez@gmail.com', '3571552222', 'hash123', 'CLIENTE'),
-('Lucas', 'Fernandez', 'lucas.fernandez@gmail.com', '3571553333', 'hash123', 'CLIENTE'),
-('Sofia', 'Lopez', 'sofia.lopez@gmail.com', '3571554444', 'hash123', 'CLIENTE'),
-('Martin', 'Diaz', 'martin.diaz@gmail.com', '3571555555', 'hash123', 'CLIENTE');
-
-
-INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
-VALUES
-(2, 'Rocky', 'Perro', 'Labrador', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'DOCIL'),
-(2, 'Milo', 'Gato', 'Siames', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
-(2, 'Luna', 'Perro', 'Caniche', 'CHICO', '2020-05-10', 'HEMBRA', 'LARGO', 'JUGUETONA');
-
-INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
-VALUES
-(2, 'Toby', 'Perro', 'Bulldog', 'MEDIANO', '2020-05-10',  'MACHO', 'CORTO', 'TRANQUILO'),
-(2, 'Nina', 'Gato', 'Persa', 'CHICO', '2020-05-10',  'HEMBRA', 'LARGO', 'DOCIL');
-
-INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
-VALUES
-(3, 'Thor', 'Perro', 'Ovejero Aleman', 'GRANDE', '2020-05-10', 'MACHO', 'LARGO', 'GUARDIAN'),
-(3, 'Simba', 'Gato', 'Comun', 'CHICO', '2020-05-10',  'MACHO', 'CORTO', 'INQUIETO'),
-(3, 'Kira', 'Perro', 'Beagle', 'MEDIANO', '2020-05-10',  'HEMBRA', 'CORTO', 'ACTIVO');
-
-INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento, sexo, tipo_pelaje, comportamiento)
-VALUES
-(4, 'Lola', 'Perro', 'Golden Retriever', 'GRANDE', '2020-05-10', 'HEMBRA', 'LARGO', 'DOCIL'),
-(4, 'Felix', 'Gato', 'Comun', 'CHICO', '2020-05-10', 'MACHO', 'CORTO', 'TRANQUILO');
-
-
-INSERT INTO dbo.mascotas (id_usuario, nombre, especie, raza, tamanio, fecha_nacimiento,  sexo, tipo_pelaje, comportamiento)
-VALUES
-(5, 'Bruno', 'Perro', 'Rottweiler', 'GRANDE', '2020-05-10', 'MACHO', 'CORTO', 'GUARDIAN'),
-(5, 'Mia', 'Gato', 'Siames', 'CHICO', '2020-05-10', 'HEMBRA', 'CORTO', 'JUGUETONA'),
-(5, 'Zeus', 'Perro', 'Pitbull', 'MEDIANO', '2020-05-10',  'MACHO', 'CORTO', 'ENERGICO');
-
-*/
 
 /*
 update usuarios
@@ -940,43 +904,59 @@ BEGIN TRAN;
 
         DECLARE
             -- 👤 CLIENTE
-@nombre NVARCHAR(100) = JSON_VALUE(@json, '$.cliente.nombre'),
-            @apellido NVARCHAR(100) = JSON_VALUE(@json, '$.cliente.apellido'),
-            @email NVARCHAR(150) = JSON_VALUE(@json, '$.cliente.email'),
-            @telefono NVARCHAR(50) = JSON_VALUE(@json, '$.cliente.telefono'),
+@nombre NVARCHAR(100) = LTRIM(RTRIM(JSON_VALUE(@json, '$.cliente.nombre'))),
+            @apellido NVARCHAR(100) = LTRIM(RTRIM(JSON_VALUE(@json, '$.cliente.apellido'))),
+            @email NVARCHAR(150) = LTRIM(RTRIM(JSON_VALUE(@json, '$.cliente.email'))),
+            @telefono NVARCHAR(50) = LTRIM(RTRIM(JSON_VALUE(@json, '$.cliente.telefono'))),
             @password NVARCHAR(255) = JSON_VALUE(@json, '$.cliente.password'),
             @password_hash VARBINARY(64),
 
             -- 🐶 MASCOTA
-            @nombre_mascota NVARCHAR(100) = JSON_VALUE(@json, '$.mascota.nombre'),
-            @especie NVARCHAR(50) = JSON_VALUE(@json, '$.mascota.especie'),
-            @raza NVARCHAR(100) = JSON_VALUE(@json, '$.mascota.raza'),
-            @tamanio NVARCHAR(50) = JSON_VALUE(@json, '$.mascota.tamanio'),
-            @fecha_nacimiento DATE = JSON_VALUE(@json, '$.mascota.fecha_nacimiento'),
-            @sexo NVARCHAR(20) = JSON_VALUE(@json, '$.mascota.sexo'),
-            @tipo_pelaje NVARCHAR(50) = JSON_VALUE(@json, '$.mascota.tipo_pelaje'),
-            @observaciones NVARCHAR(500) = JSON_VALUE(@json, '$.mascota.observaciones'),
-
-            -- 🆕 NUEVO CAMPO
+            @nombre_mascota NVARCHAR(100) = LTRIM(RTRIM(JSON_VALUE(@json, '$.mascota.nombre'))),
+            @id_especie INT = TRY_CAST(JSON_VALUE(@json, '$.mascota.id_especie') AS INT),
+            @raza NVARCHAR(100) = LTRIM(RTRIM(JSON_VALUE(@json, '$.mascota.raza'))),
+            @tamanio NVARCHAR(20) = UPPER(LTRIM(RTRIM(JSON_VALUE(@json, '$.mascota.tamanio')))),
+            @fecha_nacimiento DATE = TRY_CAST(JSON_VALUE(@json, '$.mascota.fecha_nacimiento') AS DATE),
+            @sexo NVARCHAR(20) = UPPER(LTRIM(RTRIM(JSON_VALUE(@json, '$.mascota.sexo')))),
+            @tipo_pelaje NVARCHAR(100) = LTRIM(RTRIM(JSON_VALUE(@json, '$.mascota.tipo_pelaje'))),
+            @observaciones NVARCHAR(1000) = LTRIM(RTRIM(JSON_VALUE(@json, '$.mascota.observaciones'))),
             @castrado BIT = ISNULL(TRY_CAST(JSON_VALUE(@json, '$.mascota.castrado') AS BIT), 0);
 
         DECLARE @id_usuario INT;
 
-        -- 🔒 VALIDACIONES
-        IF @email IS NULL OR @password IS NULL
+        -- 🔒 VALIDACIONES CLIENTE
+        IF ISNULL(@email, '') = '' OR ISNULL(@password, '') = ''
             THROW 50001, 'Email y contraseña son obligatorios', 1;
 
-        IF @nombre IS NULL OR @nombre = ''
+        IF ISNULL(@nombre, '') = ''
             THROW 50002, 'El nombre del cliente es obligatorio', 1;
 
-        IF EXISTS (SELECT 1 FROM dbo.usuarios WHERE email = @email)
+        IF EXISTS (
+            SELECT 1
+            FROM dbo.usuarios
+            WHERE email = @email
+        )
             THROW 50003, 'El email ya está registrado', 1;
 
-        -- 🔐 HASH
+        -- 🔒 VALIDACIONES MASCOTA
+        IF ISNULL(@nombre_mascota, '') <> ''
+BEGIN
+            IF @id_especie IS NULL
+                THROW 50004, 'La especie de la mascota es obligatoria', 1;
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.tipo_especie
+                WHERE id_especie = @id_especie
+                  AND activo = 1
+            )
+                THROW 50005, 'La especie indicada no existe o está inactiva', 1;
+END
+
+        -- 🔐 HASH PASSWORD
         SET @password_hash = HASHBYTES('SHA2_256', @password);
 
-
-		-- 👤 INSERT CLIENTE
+        -- 👤 INSERT CLIENTE
 INSERT INTO dbo.usuarios
 (
     nombre,
@@ -1003,20 +983,20 @@ VALUES
 SET @id_usuario = SCOPE_IDENTITY();
 
         -- 🐶 INSERT MASCOTA
-        IF @nombre_mascota IS NOT NULL AND @nombre_mascota <> ''
+        IF ISNULL(@nombre_mascota, '') <> ''
 BEGIN
 INSERT INTO dbo.mascotas
 (
     id_usuario,
     nombre,
-    especie,
+    id_especie,
     raza,
     tamanio,
     fecha_nacimiento,
     sexo,
     tipo_pelaje,
     observaciones,
-    castrado, -- 👈 NUEVO
+    castrado,
     activo,
     fecha_registro
 )
@@ -1024,14 +1004,14 @@ VALUES
     (
         @id_usuario,
         @nombre_mascota,
-        @especie,
+        @id_especie,
         @raza,
         @tamanio,
         @fecha_nacimiento,
         @sexo,
         @tipo_pelaje,
         @observaciones,
-        @castrado, -- 👈 NUEVO
+        @castrado,
         1,
         GETDATE()
     );
@@ -1056,23 +1036,28 @@ SELECT
                         SELECT
                             m.id_mascota,
                             m.nombre,
-                            m.especie,
+                            te.nombre AS especie,
+                            m.id_especie,
                             m.raza,
                             m.castrado
                         FROM dbo.mascotas m
+                                 INNER JOIN dbo.tipo_especie te
+                                            ON te.id_especie = m.id_especie
                         WHERE m.id_usuario = u.id_usuario
+                          AND m.activo = 1
                 FOR JSON PATH
         ) AS mascotas
-        FROM dbo.usuarios u
-        WHERE u.id_usuario = @id_usuario
-        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-    )
-) AS data
+                    FROM dbo.usuarios u
+                    WHERE u.id_usuario = @id_usuario
+                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+                )
+            ) AS data
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY
 BEGIN CATCH
-IF @@TRANCOUNT > 0 ROLLBACK;
+IF @@TRANCOUNT > 0
+            ROLLBACK;
 
 SELECT
     0 AS success,
@@ -1529,7 +1514,7 @@ SELECT
                 SELECT
                     m.id_mascota,
                     m.nombre,
-                    UPPER(m.especie) AS especie,
+                    UPPER(te.nombre) AS especie,
                     m.raza,
                     m.sexo,
                     m.tamanio,
@@ -1539,6 +1524,8 @@ SELECT
                     m.tipo_pelaje,
                     m.castrado
                 FROM dbo.mascotas m
+                         INNER JOIN dbo.tipo_especie te
+                                    ON te.id_especie = m.id_especie
                 WHERE m.id_usuario = @id_usuario
                   AND m.activo = 1
                 ORDER BY m.nombre
@@ -1575,7 +1562,7 @@ BEGIN TRAN;
         DECLARE
 @id_usuario INT,
             @nombre NVARCHAR(100),
-            @especie NVARCHAR(50),
+            @id_especie INT,
             @raza NVARCHAR(100),
             @tamanio NVARCHAR(50),
             @fecha_nacimiento DATE,
@@ -1590,7 +1577,7 @@ BEGIN TRAN;
 SELECT
     @id_usuario = CAST(JSON_VALUE(@json, '$.id_usuario') AS INT),
     @nombre = JSON_VALUE(@json, '$.nombre'),
-    @especie = JSON_VALUE(@json, '$.especie'),
+    @id_especie = CAST(JSON_VALUE(@json, '$.id_especie') AS INT),
     @raza = JSON_VALUE(@json, '$.raza'),
     @tamanio = JSON_VALUE(@json, '$.tamanio'),
     @fecha_nacimiento = JSON_VALUE(@json, '$.fecha_nacimiento'),
@@ -1602,14 +1589,14 @@ SELECT
     @castrado = ISNULL(TRY_CAST(JSON_VALUE(@json, '$.castrado') AS BIT), 0);
 
 -- 🔹 Validaciones mínimas
-IF @id_usuario IS NULL OR @nombre IS NULL OR @especie IS NULL
-            THROW 50001, 'id_usuario, nombre y especie son obligatorios', 1;
+IF @id_usuario IS NULL OR @nombre IS NULL OR @id_especie IS NULL
+            THROW 50001, 'id_usuario, nombre y id_especie son obligatorios', 1;
 
         -- 🔹 Insertar
 INSERT INTO dbo.mascotas (
     id_usuario,
     nombre,
-    especie,
+    id_especie,
     raza,
     tamanio,
     fecha_nacimiento,
@@ -1625,7 +1612,7 @@ INSERT INTO dbo.mascotas (
 VALUES (
            @id_usuario,
            @nombre,
-           UPPER(@especie),
+           @id_especie,
            @raza,
            @tamanio,
            @fecha_nacimiento,
@@ -1652,13 +1639,15 @@ SELECT
                 SELECT
                     m.id_mascota,
                     m.nombre,
-                    m.especie,
+                    te.nombre AS especie,
                     m.raza,
                     m.tamanio,
                     m.fecha_nacimiento,
                     m.sexo,
                     m.castrado
                 FROM dbo.mascotas m
+                         INNER JOIN dbo.tipo_especie te
+                                    ON te.id_especie = m.id_especie
                 WHERE m.id_mascota = @id_mascota
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
@@ -1722,7 +1711,7 @@ SELECT
                                 SELECT
                                     m.id_mascota,
                                     m.nombre AS nombre_mascota,
-                                    m.especie,
+                                    te.nombre AS especie,
                                     m.raza,
                                     m.tamanio,
                                     m.fecha_nacimiento,
@@ -1735,6 +1724,8 @@ SELECT
                                     m.fecha_registro,
                                     m.castrado
                                 FROM dbo.mascotas m
+                                         INNER JOIN dbo.tipo_especie te
+                                                    ON te.id_especie = m.id_especie
                                 WHERE m.id_usuario = u.id_usuario
                                   AND m.activo = 1
                                 ORDER BY m.nombre
@@ -1793,9 +1784,11 @@ BEGIN TRY
                         SELECT
                             m.id_mascota,
                             m.nombre AS nombre_mascota,
-                            m.especie,
+                            te.nombre AS especie,
                             m.sexo
                         FROM dbo.mascotas m
+                        INNER JOIN dbo.tipo_especie te
+                            ON te.id_especie = m.id_especie
                         WHERE m.id_usuario = u.id_usuario
                           AND m.activo = 1
                         ORDER BY m.nombre
@@ -1868,7 +1861,7 @@ END
         SELECT
             m.id_mascota,
             m.nombre,
-            m.especie,
+            te.nombre AS especie,
             m.raza,
             m.tamanio,
             m.fecha_nacimiento,
@@ -1881,10 +1874,9 @@ END
             -- 🐾 PESOS
             ISNULL(JSON_QUERY((
                 SELECT
-					CONVERT(VARCHAR(10), fecha, 23) AS fecha,
-					peso,
-					observaciones
-
+                    CONVERT(VARCHAR(10), fecha, 23) AS fecha,
+                    peso,
+                    observaciones
                 FROM dbo.peso_mascota p
                 WHERE p.id_mascota = m.id_mascota
                 ORDER BY fecha DESC
@@ -1939,10 +1931,10 @@ END
                             c.motivo_consulta,
                             c.diagnostico,
                             c.tratamiento,
-							c.anamnesis,
-							c.examen_general,
-							c.diagnostico_presuntivo,
-							c.observaciones,
+                            c.anamnesis,
+                            c.examen_general,
+                            c.diagnostico_presuntivo,
+                            c.observaciones,
 
                             -- 💊 TRATAMIENTOS
                             JSON_QUERY((
@@ -1982,6 +1974,8 @@ END
             )), '{}') AS historia_clinica
 
         FROM dbo.mascotas m
+        INNER JOIN dbo.tipo_especie te
+            ON te.id_especie = m.id_especie
         WHERE m.id_mascota = @id_mascota
           AND m.id_usuario = @id_usuario
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
@@ -2011,7 +2005,7 @@ BEGIN TRAN;
 @id_usuario INT,
             @id_mascota INT,
             @nombre NVARCHAR(100),
-            @especie NVARCHAR(50),
+            @id_especie INT,
             @raza NVARCHAR(100),
             @tamanio NVARCHAR(20),
             @fecha_nacimiento DATE,
@@ -2026,7 +2020,7 @@ SELECT
     @id_usuario = TRY_CAST(JSON_VALUE(@json, '$.id_usuario') AS INT),
     @id_mascota = TRY_CAST(JSON_VALUE(@json, '$.id_mascota') AS INT),
     @nombre = JSON_VALUE(@json, '$.nombre'),
-    @especie = JSON_VALUE(@json, '$.especie'),
+    @id_especie = TRY_CAST(JSON_VALUE(@json, '$.id_especie') AS INT),
     @raza = JSON_VALUE(@json, '$.raza'),
     @tamanio = JSON_VALUE(@json, '$.tamanio'),
     @sexo = JSON_VALUE(@json, '$.sexo'),
@@ -2052,7 +2046,7 @@ SET @fecha_nacimiento = TRY_CONVERT(DATE, JSON_VALUE(@json, '$.fecha_nacimiento'
 UPDATE dbo.mascotas
 SET
     nombre = ISNULL(@nombre, nombre),
-    especie = ISNULL(@especie, especie),
+    id_especie = ISNULL(@id_especie, id_especie),
     raza = ISNULL(@raza, raza),
     tamanio = ISNULL(@tamanio, tamanio),
     fecha_nacimiento = ISNULL(@fecha_nacimiento, fecha_nacimiento),
@@ -2072,9 +2066,26 @@ SELECT
     'Mascota actualizada correctamente' AS mensaje,
     JSON_QUERY(
             (
-                SELECT *
-                FROM dbo.mascotas
-                WHERE id_mascota = @id_mascota
+                SELECT
+                    m.id_mascota,
+                    m.id_usuario,
+                    m.nombre,
+                    te.nombre AS especie,
+                    m.raza,
+                    m.tamanio,
+                    m.fecha_nacimiento,
+                    m.sexo,
+                    m.tipo_pelaje,
+                    m.alergias_general,
+                    m.comportamiento,
+                    m.observaciones,
+                    m.activo,
+                    m.fecha_registro,
+                    m.castrado
+                FROM dbo.mascotas m
+                         INNER JOIN dbo.tipo_especie te
+                                    ON te.id_especie = m.id_especie
+                WHERE m.id_mascota = @id_mascota
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         )
             ) AS mascota
@@ -4294,6 +4305,51 @@ SELECT
                 FOR JSON PATH
                 ), '[]')
     ) AS data
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END TRY
+BEGIN CATCH
+
+SELECT
+    0 AS success,
+    ERROR_MESSAGE() AS mensaje
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+
+END CATCH
+END;
+GO
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR ALTER PROCEDURE dbo.sp_get_especies
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+BEGIN TRY
+
+SELECT
+    1 AS success,
+    'OK' AS mensaje,
+    JSON_QUERY(
+            (
+                SELECT
+                    id_especie,
+                    nombre
+                FROM dbo.tipo_especie
+                WHERE activo = 1
+                ORDER BY nombre
+                FOR JSON PATH
+        )
+            ) AS especies
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 END TRY

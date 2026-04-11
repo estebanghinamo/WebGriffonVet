@@ -484,37 +484,37 @@ public class GriffonVetRepository {
 
     public String getMascota(String json) throws JsonProcessingException {
 
-    try {
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("json", json);
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("json", json);
 
-        Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
-                "sp_get_informacioncompleta_mascota",
-                "dbo",
-                params
-        );
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+                    "sp_get_informacioncompleta_mascota",
+                    "dbo",
+                    params
+            );
 
-        List<Map<String, Object>> rs =
-                (List<Map<String, Object>>) result.get("#result-set-1");
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
 
-        // 🔹 Sin datos
-        if (rs == null || rs.isEmpty()) {
-            return "{\"success\": 0, \"mensaje\": \"Sin datos\"}";
+            // 🔹 Sin datos
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Sin datos\"}";
+            }
+
+            // 🔹 Si el SP ya devuelve JSON
+            String jsonResult = (String) rs.get(0).get("json");
+
+            if (jsonResult != null) {
+                return jsonResult;
+            }
+
+            return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
         }
-
-        // 🔹 Si el SP ya devuelve JSON
-        String jsonResult = (String) rs.get(0).get("json");
-
-        if (jsonResult != null) {
-            return jsonResult;
-        }
-
-        return "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
-
-    } catch (Exception e) {
-        return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
     }
-}
 
     public String editarInfoGeneralMascota(String json) {
 
@@ -1475,6 +1475,38 @@ public class GriffonVetRepository {
 
             Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
                     "sp_get_noticias_json",
+                    "dbo",
+                    params
+            );
+
+            List<Map<String, Object>> rs =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            if (rs == null || rs.isEmpty()) {
+                return "{\"success\": 0, \"mensaje\": \"Sin respuesta del SP\"}";
+            }
+
+            Object value = rs.get(0).values().iterator().next();
+
+            return value != null
+                    ? value.toString()
+                    : "{\"success\": 0, \"mensaje\": \"Respuesta vacía\"}";
+
+        } catch (Exception e) {
+            return "{\"success\": 0, \"mensaje\": \"Error interno: " + e.getMessage() + "\"}";
+        }
+    }
+
+
+    public String obtenerEspecies() {
+        try {
+            MapSqlParameterSource params = new MapSqlParameterSource();
+
+            Map<String, Object> result = jdbcCallFactory.executeWithOutputs(
+
+
+                    "sp_get_especies",
+
                     "dbo",
                     params
             );

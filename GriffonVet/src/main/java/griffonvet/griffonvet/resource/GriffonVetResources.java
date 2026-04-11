@@ -733,5 +733,20 @@ public class GriffonVetResources {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
+    @GetMapping("/ObtenerEspecies")
+    public ResponseEntity<String> obtenerEspecies() {
 
+        String response = griffonVetRepository.obtenerEspecies();
+
+
+        if (response.contains("\"success\":0")) {
+            return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+    }
 }
